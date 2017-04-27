@@ -1,10 +1,10 @@
-window.TERMINALIA = window.TERMINALIA || {};
+window.SVGMASTER = window.SVGMASTER || {};
 
-TERMINALIA.Utilities = function Utilities() {
+SVGMASTER.SvgMaster = function SvgMaster() {
     
     var self = this;
 
-    function loadSvg(svgFile, id, clb){
+    function loadSvg(svgFile, id, callback){
 		d3.xml(svgFile, "image/svg+xml", function (error, data) {
 	        if (error) {
 	        	console.error(error);
@@ -19,7 +19,7 @@ TERMINALIA.Utilities = function Utilities() {
 	        	svg.attr('height', null);
 	        	svg.attr('width', null);
 
-	        	clb(svg);
+	        	callback(svg);
 	        }
 	    });
 	}
@@ -38,6 +38,24 @@ TERMINALIA.Utilities = function Utilities() {
 	    // http://stackoverflow.com/a/14520451/715002
 	    var svgDocument = new DOMParser().parseFromString(svgDoctype+svgContent, 'image/svg+xml');
 	    return svgDocument;
+	}
+
+	function createSVGMesh(svg) {
+		var mesh;
+		var shape = transformSVGPath(svg.select("#out path").attr("d"));
+
+		var geometry = new THREE.ShapeGeometry( shape );
+		var material = new THREE.LineBasicMaterial( { color: 0x41b9e6, linewidth:2 } );
+		var materialMesh = new THREE.MeshLambertMaterial();
+		materialMesh.color = 0xfffff;
+		material.side = THREE.DoubleSide;
+		mesh = new THREE.Mesh( geometry, material );
+		mesh.scale.set(0.5, 0.5, 0.5);
+		mesh.rotation.x = Math.PI/2;
+		mesh.position.x = -300;
+		mesh.position.z = -50;
+			
+		return mesh;
 	}
 
 	function transformSVGPath(pathStr) {
@@ -311,4 +329,5 @@ TERMINALIA.Utilities = function Utilities() {
     this.loadSvg = loadSvg;
     this.SVGNormalize = SVGNormalize;
 	this.transformSVGPath = transformSVGPath;
+	this.createSVGMesh = createSVGMesh;
 }

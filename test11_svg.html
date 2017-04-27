@@ -19,14 +19,13 @@
 	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
 	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
 	<script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
-    <script src="libs/Utilities.js"></script>
-    <script src="libs/Outline_Basic.js"></script>
+    <script src="libs/SVGMaster.js"></script>
 
 	<script>
 
 		var camera, camera_control, scene, renderer, stats
 		var textureLoader, objLoader, cubeTextureLoader;
-        var utilities, outline_basic;
+        var svgMaster, svgMesh;
 		var rayCaster, mouse, sprite1, sprite2, sprit3;
 
 		init();
@@ -47,7 +46,7 @@
 			cubeTextureLoader = new THREE.CubeTextureLoader();
             rayCaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
-            utilities = new TERMINALIA.Utilities();
+            svgMaster = new SVGMASTER.SvgMaster();
 
             
 			//###################################################
@@ -74,8 +73,9 @@
 			// ASSETS LOADING
 			//###################################################
 			//addCube();
-            utilities.loadSvg('assets/svg/outline.svg', 'outline', function(svg){
-                outline_basic = new Outline_Basic(scene, utilities, svg);
+            svgMaster.loadSvg('assets/svg/outline.svg', 'outline', function(svg){
+				svgMesh = svgMaster.createSVGMesh(svg);
+				scene.add(svgMesh);
             });
 
 			var carBodyTexture = createTexture('assets/textures/car_body.png');
@@ -189,18 +189,6 @@
 			var texture = createTexture(textureFile);
 			var material = new THREE.MeshLambertMaterial({ map: texture});
 			return material;
-		}
-
-		function addCube() {
-			var cubeGeometry = new THREE.CubeGeometry(1, 1, 1);
-			var cubeMaterial = new THREE.MeshPhongMaterial();
-			var cubeTexture = new textureLoader.load("assets/textures/crate.png");
-			cubeMaterial.map = cubeTexture;
-
-			var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-			cube.position.set(0, 0, 0);
-						
-			scene.add(cube);
 		}
 
 		function loadObjModel(name, objFile, material, loader) {
