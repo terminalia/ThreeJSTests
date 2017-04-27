@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>ThreeJS VideoTexture Test 1</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			margin: 0px;
+			background-color: #000000;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+
+	<script src="bower_components/three.js/build/three.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+	<script src="bower_components/three.js/examples/js/controls/TrackballControls.js"></script>
+    <script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+	<script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
+
+	<script>
+
+		var camera, camera_control, scene, renderer, stats
+		var textureLoader;
+        var rayCaster, mouse, sprite;
+
+		init();
+		animate();
+
+		function init() {
+			//###################################################
+			// INITIAL SETUP
+			//###################################################
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			//renderer.setClearColor(new THREE.Color('rgb(98, 166, 189)', 1))
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+
+			textureLoader = new THREE.TextureLoader();
+            rayCaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+			//###################################################
+			// SCENE SETUP
+			//###################################################
+			scene = new THREE.Scene();
+
+			//Setup the camera
+			camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.z = 5;
+
+			//Add controls to the camera
+			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
+
+            var pointLight = new THREE.PointLight();
+			pointLight.color = rgbToGLColor(255, 255, 255);
+            pointLight.intensity = 1.0;
+			//Any object with a distance below this number are lit
+			pointLight.distance = 1000;
+			pointLight.decay = 2;
+			pointLight.position.set(0, 10, 0);
+            scene.add(pointLight);
+	
+			//###################################################
+			// ASSETS LOADING
+			//###################################################
+            var floorMat = new THREE.MeshPhongMaterial();
+			floorMat.color = rgbToGLColor(0, 221, 221);
+			floorMat.specular = rgbToGLColor(153, 153, 153);
+			floorMat.shininess = 0.1;
+			floorMat.side = THREE.DoubleSide;
+			var floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(100, 100), floorMat);
+			floor.rotation.x = Math.PI/2;
+			scene.add(floor);
+
+            var sphereMat = new THREE.MeshPhongMaterial();
+            sphereMat.color = rgbToGLColor(255, 255, 120);
+            var sphere = new THREE.Mesh( new THREE.SphereBufferGeometry( 1, 12, 12), sphereMat );
+            sphere.position.set(0, 1, 0);
+            scene.add( sphere );
+
+            var icon1Texture = textureLoader.load('assets/textures/circle_icon1.png');
+            var icon1Mat = new THREE.SpriteMaterial( { map: icon1Texture, color: 0xffffff } );
+	        sprite = new THREE.Sprite( icon1Mat );
+            sprite.name = "Sprite";
+            sprite.position.set(2, 1, .8);
+            sprite.scale.set(0.3, 0.3, 1.0);
+            scene.add(sprite);
+
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			stats = new Stats();
+			document.body.appendChild( stats.domElement );
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.left	= '0px';
+			stats.domElement.style.bottom	= '0px';
+			stats.update();
+
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+			window.addEventListener( 'resize', onWindowResize, false );
+            //window.addEventListener('mousemove', onMouseMove, false);
+            window.addEventListener('mousedown', onMouseDown, false);
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+        function onMouseMove(event) {
+            mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+        }
+
+        function onMouseDown(event) {
+            mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+            raycastSprites();
+        }
+
+		function animate() {
+			renderer.render( scene, camera );
+			camera_control.update();
+			requestAnimationFrame( animate );
+			stats.update();
+		}
+
+        function raycastSprites() {
+            rayCaster.setFromCamera(mouse, camera);
+            var intersects = rayCaster.intersectObjects(scene.children);
+            if (intersects.length > 0) {
+                if (intersects[0].object.type === 'Sprite') {
+                    intersects[0].object.material.color = rgbToGLColor(randomIntFromInterval(0, 255), randomIntFromInterval(0, 255), randomIntFromInterval(0, 255));
+                }
+            }
+        }
+
+        function rgbToGLColor(r, g, b) {
+			return new THREE.Color('rgb(' + r + ',' + g + ',' + b + ')');
+		}
+
+        function randomIntFromInterval(min,max) {
+            return Math.floor(Math.random()*(max-min+1)+min);
+        }
+
+</script>
+</body>
+</html>

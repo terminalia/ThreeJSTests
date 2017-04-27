@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>ThreeJS VideoTexture Test 1</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			margin: 0px;
+			background-color: #000000;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+
+    <script src="bower_components/d3/d3.js"></script>
+	<script src="bower_components/three.js/build/three.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+	<script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
+    <script src="libs/Utilities.js"></script>
+    <script src="libs/Outline_Basic.js"></script>
+
+	<script>
+
+		var camera, camera_control, scene, renderer, stats
+		var textureLoader, objLoader, cubeTextureLoader;
+        var utilities, outline_basic;
+		var rayCaster, mouse, sprite1, sprite2, sprit3;
+
+		init();
+		animate();
+
+		function init() {
+			//###################################################
+			// INITIAL SETUP
+			//###################################################
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			//renderer.setClearColor(new THREE.Color('rgb(98, 166, 189)', 1))
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+
+			objLoader = new THREE.OBJLoader();
+			textureLoader = new THREE.TextureLoader();
+			cubeTextureLoader = new THREE.CubeTextureLoader();
+            rayCaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+            utilities = new TERMINALIA.Utilities();
+
+            
+			//###################################################
+			// SCENE SETUP
+			//###################################################
+			scene = new THREE.Scene();
+
+			//Setup the camera
+			camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.set(10, 10, 5);
+			camera.rotateSpeed = 20.0;
+			camera.lookAt(scene.position);
+
+			//Add controls to the camera
+			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
+
+			var reflectionCube = createCubeMapTexture('/assets/textures/cubemaps/parliament/', '.jpg');
+            reflectionCube.format = THREE.RGBFormat;
+			
+			var ambientLight = new THREE.AmbientLight(0xffffff);
+            scene.add(ambientLight);
+	
+			//###################################################
+			// ASSETS LOADING
+			//###################################################
+			//addCube();
+            utilities.loadSvg('assets/svg/outline.svg', 'outline', function(svg){
+                outline_basic = new Outline_Basic(scene, utilities, svg);
+            });
+
+			var carBodyTexture = createTexture('assets/textures/car_body.png');
+			var carBodyMat = new THREE.MeshLambertMaterial( { map: carBodyTexture, envMap: reflectionCube, combine: THREE.MixOperation, reflectivity: .5} );
+			var carBody = loadObjModel("CarBody", 'assets/models/obj/carbody.obj', carBodyMat, objLoader);
+			carBody.scale.set(5, 5, 5);
+			scene.add(carBody);
+
+			//ADD CAR MECHANICAL PARTS
+			var carMechanicalTexture = createTexture('assets/textures/car_mechanical.png');
+			var carMechanicalMat = new THREE.MeshLambertMaterial( { map: carMechanicalTexture, envMap: reflectionCube, combine: THREE.MixOperation, reflectivity: 0.5} );
+			var carMechanical = loadObjModel("CarMechanical", 'assets/models/obj/carmechanical.obj', carMechanicalMat, objLoader);
+			carMechanical.scale.set(5, 5, 5);
+			scene.add(carMechanical);
+
+			//ADD CAR WHEELS
+			var carWheelsMat = createTextureMaterial('assets/textures/car_wheels.jpg');
+			var carWheels = loadObjModel("CarWheels", 'assets/models/obj/carwheels.obj', carWheelsMat, objLoader);
+			carWheels.scale.set(5, 5, 5);
+			scene.add(carWheels);
+
+			//ADD CAR TYRES
+			var carTyresMat = new THREE.MeshLambertMaterial( { color: 0xcbcfd6, envMap: reflectionCube, combine: THREE.MixOperation, reflectivity: 1.0} );
+			var carTyres = loadObjModel("CarWheels", 'assets/models/obj/cartyres.obj', carTyresMat, objLoader);
+			carTyres.scale.set(5, 5, 5);
+			scene.add(carTyres);
+
+			//ADD SPRITE1
+            var iconTexture = textureLoader.load('assets/textures/circle_icon1.png');
+            var iconMat = new THREE.SpriteMaterial( { map: iconTexture, color: 0xffffff } );
+	        sprite1 = new THREE.Sprite( iconMat );
+            sprite1.name = "Sprite1";
+            sprite1.position.set(4.2, 3, .8);
+            sprite1.scale.set(1.5, 1.5, 1.5);
+            scene.add(sprite1);
+
+			//ADD SPRITE2
+            iconTexture = textureLoader.load('assets/textures/circle_icon2.png');
+            iconMat = new THREE.SpriteMaterial( { map: iconTexture, color: 0xffffff } );
+	        sprite2 = new THREE.Sprite( iconMat );
+            sprite2.name = "Sprite";
+            sprite2.position.set(0, 6, -5);
+            sprite2.scale.set(1.5, 1.5, 1.5);
+            scene.add(sprite2);
+
+			//ADD SPRITE3
+            iconTexture = textureLoader.load('assets/textures/circle_icon3.png');
+            iconMat = new THREE.SpriteMaterial( { map: iconTexture, color: 0xffffff } );
+	        sprite3 = new THREE.Sprite( iconMat );
+            sprite3.name = "Sprite";
+            sprite3.position.set(0, 4, 5);
+            sprite3.scale.set(1.5, 1.5, 1.5);
+            scene.add(sprite3);
+
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			stats = new Stats();
+			document.body.appendChild( stats.domElement );
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.left	= '0px';
+			stats.domElement.style.bottom	= '0px';
+			stats.update();
+
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+			window.addEventListener( 'resize', onWindowResize, false );
+			window.addEventListener('mousedown', onMouseDown, false);
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function onMouseDown(event) {
+            mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+            raycastSprites();
+        }
+
+		function animate() {
+
+			renderer.render( scene, camera );
+			camera_control.update();
+			requestAnimationFrame( animate );
+			stats.update();
+		}
+
+		function raycastSprites() {
+            rayCaster.setFromCamera(mouse, camera);
+            var intersects = rayCaster.intersectObjects(scene.children);
+            if (intersects.length > 0) {
+                if (intersects[0].object.type === 'Sprite') {
+                    intersects[0].object.material.color = rgbToGLColor(randomIntFromInterval(0, 255), randomIntFromInterval(0, 255), randomIntFromInterval(0, 255));
+                }
+            }
+        }
+
+		function createTexture(textureFile) {
+			var texture = textureLoader.load(textureFile);
+
+			return texture;
+		}
+
+		function createTextureMaterial(textureFile) {
+			var texture = createTexture(textureFile);
+			var material = new THREE.MeshLambertMaterial({ map: texture});
+			return material;
+		}
+
+		function addCube() {
+			var cubeGeometry = new THREE.CubeGeometry(1, 1, 1);
+			var cubeMaterial = new THREE.MeshPhongMaterial();
+			var cubeTexture = new textureLoader.load("assets/textures/crate.png");
+			cubeMaterial.map = cubeTexture;
+
+			var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+			cube.position.set(0, 0, 0);
+						
+			scene.add(cube);
+		}
+
+		function loadObjModel(name, objFile, material, loader) {
+			var container = new THREE.Object3D();
+			loader.load(objFile, function(object) {
+				object.name = name;
+				object.traverse(function(child) {
+					if (child instanceof THREE.Mesh) {
+						child.material = material;
+					}
+				});
+				container.add(object);
+			});
+
+			return container;
+		}
+
+		function createCubeMapTexture(path, format) {
+            var urls = [
+                path + 'posx' + format,
+                path + 'negx' + format,
+                path + 'posy' + format,
+                path + 'negy' + format,
+                path + 'posz' + format,
+                path + 'negz' + format
+            ];
+
+            var cubeTexture = cubeTextureLoader.load(urls);
+            return cubeTexture;
+        }
+
+		function rgbToGLColor(r, g, b) {
+			return new THREE.Color('rgb(' + r + ',' + g + ',' + b + ')');
+		}
+
+		function randomIntFromInterval(min,max) {
+            return Math.floor(Math.random()*(max-min+1)+min);
+        }
+
+</script>
+</body>
+</html>

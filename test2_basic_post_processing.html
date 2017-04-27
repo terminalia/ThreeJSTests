@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Test2 - Basic Post Processing</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+	<style>
+		body {
+			margin: 0px;
+			background-color: #000000;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+	<!-- THREEJS -->
+	<script src="bower_components/three.js/build/three.js"></script>
+	
+	<!-- SHADERS -->
+	<script src="bower_components/three.js/examples/js/shaders/CopyShader.js"></script>
+	<script src="bower_components/three.js/examples/js/shaders/ConvolutionShader.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/EffectComposer.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/RenderPass.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/MaskPass.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/ShaderPass.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/TexturePass.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/BloomPass.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/FilmPass.js"></script>
+	<script src="bower_components/three.js/examples/js/shaders/FilmShader.js"></script>
+
+	<!--UTILS -->
+	<script src="bower_components/three.js/examples/js/libs/dat.gui.min.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+
+	<script src="bower_components/three.js/examples/js/controls/TrackballControls.js"></script>
+
+	<script type="text/javascript">
+		var camera, camera_control, scene, renderer, stats, gui, gui_controls;
+		var textureLoader, composer, filmPass;
+
+		init();
+		animate();
+
+		function init() {
+			//###################################################
+			// INITIAL SETUP
+			//###################################################
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			document.body.appendChild(renderer.domElement);
+
+			textureLoader = new THREE.TextureLoader();
+
+			//###################################################
+			// SCENE SETUP
+			//###################################################
+			scene = new THREE.Scene();
+
+			camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 10000);
+			camera.position.z = 5;
+
+			camera_control = new THREE.TrackballControls(camera, renderer.domElement);
+
+			var ambientLight = new THREE.AmbientLight(0xfaebd7);
+			scene.add(ambientLight);
+
+			//###################################################
+			// ASSETS LOADING
+			//###################################################
+			loadAssets();
+			initPostProcessing();
+
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			initGUI();
+
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+			window.addEventListener('resize', onWindowResize, false);
+		}
+
+		function initPostProcessing() {
+			//Create an EffectComposer that we can use to add post processing passes
+			composer = new THREE.EffectComposer(renderer);
+			//Create a RenderPass to render our scene for future passes 
+			var renderPass = new THREE.RenderPass(scene, camera);
+			//Create a FilmPass to add a post processing effect  
+			filmPass = new THREE.FilmPass(0.8, 0.325, 256, false);
+			//Render the FilmPass to screen so we can see the scene
+			filmPass.renderToScreen = true;
+			//Add the passes in the right order
+			composer.addPass(renderPass);
+			composer.addPass(filmPass);
+		}
+		function animate() {
+			camera_control.update()
+			requestAnimationFrame( animate )
+
+			//Use the EffectComposer to render the scene to the screen
+			composer.render();
+			stats.update()
+		}
+
+		function loadAssets() {
+			var cubeGeometry = new THREE.CubeGeometry(1, 1, 1)
+			var cubeMaterial = new THREE.MeshPhongMaterial()
+			var cubeTexture = new textureLoader.load("assets/textures/crate.png");
+			cubeMaterial.map = cubeTexture;
+
+			var cube = new THREE.Mesh(cubeGeometry, cubeMaterial)
+			cube.position.set(0, 0, 0)
+						
+			scene.add(cube)
+		} 
+
+		function initGUI() {
+			gui = new dat.GUI();
+			var controls = new function() {
+				this.scanlinesCount = 256;
+	            this.grayscale = false;
+	            this.scanlinesIntensity = 0.3;
+	            this.noiseIntensity = 0.8;
+
+	            this.updateEffectFilm = function () {
+	                filmPass.uniforms.grayscale.value = controls.grayscale;
+	                filmPass.uniforms.nIntensity.value = controls.noiseIntensity;
+	                filmPass.uniforms.sIntensity.value = controls.scanlinesIntensity;
+	                filmPass.uniforms.sCount.value = controls.scanlinesCount;
+	            };
+        	};
+
+            gui.add(controls, "scanlinesIntensity", 0, 1).onChange(controls.updateEffectFilm);
+	        gui.add(controls, "noiseIntensity", 0, 3).onChange(controls.updateEffectFilm);
+	        gui.add(controls, "grayscale").onChange(controls.updateEffectFilm);
+	        gui.add(controls, "scanlinesCount", 0, 2048).step(1).onChange(controls.updateEffectFilm);
+
+
+	        stats = new Stats()
+			document.body.appendChild( stats.domElement )
+			stats.domElement.style.position = 'absolute'
+			stats.domElement.style.left	= '0px'
+			stats.domElement.style.bottom	= '0px'
+		}
+
+		function onWindowResize() {
+			camera.aspect = window.innerWidth / window.innerHeight
+			camera.updateProjectionMatrix()
+			renderer.setSize( window.innerWidth, window.innerHeight )
+		}
+	</script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>CubeMap Reflection</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			margin: 0px;
+			background-color: #000000;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+
+	<script src="bower_components/three.js/build/three.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+	<script src="bower_components/three.js/examples/js/controls/TrackballControls.js"></script>
+    <script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
+	<script>
+
+		var camera, camera_control, scene, renderer, stats;
+		var textureLoader, cubeTextureLoader, objLoader;
+
+		init();
+		animate();
+
+		function init() {
+			//Init Renderer
+            renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			//renderer.setClearColor(new THREE.Color('rgb(98, 166, 189)', 1))
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+
+            //Loaders
+			textureLoader = new THREE.TextureLoader();
+            cubeTextureLoader = new THREE.CubeTextureLoader();
+            objLoader = new THREE.OBJLoader();
+
+			//Scene
+			scene = new THREE.Scene();
+
+			//Setup the camera
+			camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.z = 5;
+			camera_control = new THREE.TrackballControls(camera, renderer.domElement);
+
+            var reflectionCube = createCubeMapTexture('/assets/textures/cubemaps/parliament/', '.jpg');
+            reflectionCube.format = THREE.RGBFormat;
+            scene.background = reflectionCube;
+
+            var ambientLight = new THREE.AmbientLight(0xffffff);
+            ambientLight.color = new THREE.Color("rgb(255, 255, 255)");
+            //scene.add(ambientLight);
+
+            var spotLight = new THREE.SpotLight();
+            spotLight.color = new THREE.Color("rgb(255, 255, 255)");
+            spotLight.position.set(0, 30, 30);
+            spotLight.intensity = 0.9;
+            scene.add(spotLight);
+
+            var refractionCube = createCubeMapTexture('/assets/textures/cubemaps/parliament/', '.jpg');
+            refractionCube.mapping = THREE.CubeRefractionMapping;
+            refractionCube.format = THREE.RGBFormat;
+			
+			var sphereTexture = textureLoader.load('/assets/textures/plaster.jpg');
+            var cubeMaterial1 = new THREE.MeshLambertMaterial( { color: 0xffffff, envMap: reflectionCube } );
+            var cubeMaterial2 = new THREE.MeshLambertMaterial( { color: 0xf767ed, envMap: refractionCube, refractionRatio: 0.95 } );
+            var cubeMaterial3 = new THREE.MeshLambertMaterial( { color: 0x85e2de, envMap: reflectionCube, combine: THREE.MixOperation, reflectivity: 0.8} );
+			var cubeMaterial4 = new THREE.MeshLambertMaterial( { map: sphereTexture, envMap: reflectionCube, reflectivity: 0.5} );
+			var cubeMaterial5 = new THREE.MeshLambertMaterial( { color: 0x85e2de, map: sphereTexture, envMap: reflectionCube, combine: THREE.MixOperation, reflectivity: 0.6} );
+            
+			var sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 25, 25), cubeMaterial5);
+            sphere.position.x = 3;
+			scene.add(sphere);
+
+            objLoader.load('assets/models/obj/test_car.obj', function(loadedMesh) {
+                   
+                var material = new THREE.MeshPhongMaterial();
+                material.color = new THREE.Color("rgb(255, 150, 252)");
+                //material.envMap = cubeMapTexture;
+                
+                loadedMesh.traverse(function(child) {
+                    if (child instanceof THREE.Mesh) {
+                        child.material = cubeMaterial3;
+                    }
+                });
+                
+                scene.add(loadedMesh);
+            });
+
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			stats = new Stats();
+			document.body.appendChild( stats.domElement );
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.left	= '0px';
+			stats.domElement.style.bottom	= '0px';
+			stats.update();
+
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+			window.addEventListener( 'resize', onWindowResize, false );
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function animate() {
+
+			renderer.render( scene, camera );
+			camera_control.update();
+			requestAnimationFrame( animate );
+			stats.update();
+		}
+
+        function createCubeMapTexture(path, format) {
+            var urls = [
+                path + 'posx' + format,
+                path + 'negx' + format,
+                path + 'posy' + format,
+                path + 'negy' + format,
+                path + 'posz' + format,
+                path + 'negz' + format
+            ];
+
+            var cubeTexture = cubeTextureLoader.load(urls);
+            return cubeTexture;
+        }
+</script>
+</body>
+</html>

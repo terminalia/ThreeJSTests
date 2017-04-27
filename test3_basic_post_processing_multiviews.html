@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Test3 - Basic Post Processing Multiview</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+	<style>
+		body {
+			margin: 0px
+			background-color: #000000
+			overflow: hidden
+		}
+	</style>
+</head>
+<body>
+	<!-- THREEJS -->
+	<script src="bower_components/three.js/build/three.js"></script>
+	
+	<!-- SHADERS -->
+	<script src="bower_components/three.js/examples/js/shaders/CopyShader.js"></script>
+	<script src="bower_components/three.js/examples/js/shaders/ConvolutionShader.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/EffectComposer.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/RenderPass.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/MaskPass.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/ShaderPass.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/TexturePass.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/BloomPass.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/FilmPass.js"></script>
+	<script src="bower_components/three.js/examples/js/postprocessing/DotScreenPass.js"></script>
+	<script src="bower_components/three.js/examples/js/shaders/FilmShader.js"></script>
+	<script src="bower_components/three.js/examples/js/shaders/DotScreenShader.js"></script>
+
+	<!--UTILS -->
+	<script src="bower_components/three.js/examples/js/libs/dat.gui.min.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+
+	<script src="bower_components/three.js/examples/js/controls/TrackballControls.js"></script>
+
+		<script type="text/javascript">
+		var camera, camera_control, scene, renderer, stats, gui, gui_controls;
+		var textureLoader, normal_composer, bloom_composer, dot_composer, film_composer;
+		var clock;
+		var halfWidth = window.innerWidth / 2;
+		var halfHeight = window.innerHeight / 2;
+
+		init();
+		animate();
+
+		function init() {
+			//###################################################
+			// INITIAL SETUP
+			//###################################################
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			document.body.appendChild(renderer.domElement);
+			clock = new THREE.Clock();
+
+			textureLoader = new THREE.TextureLoader();
+
+			//###################################################
+			// SCENE SETUP
+			//###################################################
+			scene = new THREE.Scene();
+
+			camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 10000);
+			camera.position.z = 2;
+
+			camera_control = new THREE.TrackballControls(camera, renderer.domElement);
+
+			var ambientLight = new THREE.AmbientLight(0xfaebd7);
+			scene.add(ambientLight);
+
+			//###################################################
+			// ASSETS LOADING
+			//###################################################
+			loadAssets();
+			initPostProcessing();
+
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			initGUI();
+
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+			window.addEventListener('resize', onWindowResize, false);
+		}
+
+		function initPostProcessing() {
+			//Create an effect composer to draw the scene without post processing	
+			normal_composer = new THREE.EffectComposer(renderer);
+			//Create a pass to render the scene without effects
+			var renderPass = new THREE.RenderPass(scene, camera);
+			//Create a pass to render to screen
+			var copyPass = new THREE.ShaderPass(THREE.CopyShader);
+			copyPass.renderToScreen = true;
+			normal_composer.addPass(renderPass);
+			normal_composer.addPass(copyPass);
+
+			//Store the render without effect in this texture pass so we can reuse it in the other composers
+			var texturePass = new THREE.TexturePass(normal_composer.renderTarget1);
+
+			//Create a composer for a particular effect
+			bloom_composer = new THREE.EffectComposer(renderer);
+			var bloomPass = new THREE.BloomPass(3, 25, 5.0, 256);
+			//Use the texturePass as the origin onto which we apply the different effects
+			bloom_composer.addPass(texturePass);
+			bloom_composer.addPass(bloomPass);
+			bloom_composer.addPass(copyPass);
+
+			film_composer = new THREE.EffectComposer(renderer);
+			var filmPass = new THREE.FilmPass(0.8, 0.325, 256, false);
+			film_composer.addPass(texturePass);
+			film_composer.addPass(filmPass);
+			film_composer.addPass(copyPass);
+
+			dot_composer = new THREE.EffectComposer(renderer);
+			var dotPass = new THREE.DotScreenPass();
+			dot_composer.addPass(texturePass);
+			dot_composer.addPass(dotPass);
+			dot_composer.addPass(copyPass);
+		}
+
+		function animate() {
+			var delta = clock.getDelta();
+			camera_control.update(delta);
+			requestAnimationFrame( animate );
+
+			renderer.autoClear = false;
+			renderer.clear();
+
+			//Set a viewport
+			renderer.setViewport(0, halfHeight, halfWidth, halfHeight);
+			//render the scene with a particular composer 
+			normal_composer.render(delta);
+
+			renderer.setViewport(halfWidth, halfHeight, halfWidth, halfHeight);
+			bloom_composer.render(delta);
+
+			renderer.setViewport(0, 0, halfWidth, halfHeight);
+			film_composer.render(delta);
+
+			renderer.setViewport(halfWidth, 0, halfWidth, halfHeight);
+			dot_composer.render(delta);
+
+			stats.update()
+		}
+
+		function loadAssets() {
+			var cubeGeometry = new THREE.CubeGeometry(1, 1, 1)
+			var cubeMaterial = new THREE.MeshPhongMaterial()
+			var cubeTexture = new textureLoader.load("assets/textures/crate.png");
+			cubeMaterial.map = cubeTexture;
+
+			var cube = new THREE.Mesh(cubeGeometry, cubeMaterial)
+			cube.position.set(0, 0, 0)
+						
+			scene.add(cube)
+		} 
+
+		function initGUI() {
+
+
+
+	        stats = new Stats()
+			document.body.appendChild( stats.domElement )
+			stats.domElement.style.position = 'absolute'
+			stats.domElement.style.left	= '0px'
+			stats.domElement.style.bottom	= '0px'
+		}
+
+		function onWindowResize() {
+			camera.aspect = window.innerWidth / window.innerHeight
+			camera.updateProjectionMatrix()
+			renderer.setSize( window.innerWidth, window.innerHeight )
+		}
+	</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "ThreeJSCustomShaders",
+  "homepage": "https://github.com/terminalia/ThreeJSCustomShaders",
+  "authors": [
+    "terminalia <l.zanconi@todo.to.it>"
+  ],
+  "description": "ThreeJS custom shaders tests",
+  "main": "",
+  "keywords": [
+    "WebGL",
+    "ThreeJS"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "three.js": "threejs#*",
+    "d3": "~3"
+  }
+}
