@@ -28,8 +28,6 @@ TERMINALIA.TerminUtils = function TerminUtils() {
         var intersects = self.rayCaster.intersectObjects(scene.children);
         if (intersects.length > 0) {
             if (intersects[0].object.type === 'Sprite') {
-                intersects[0].object.material.color = createRandomColor();
-
                 if (callback) {
                     callback(intersects[0].object);
                 }

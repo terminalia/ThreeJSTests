@@ -144,7 +144,7 @@
             mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
             TerminUtils.raycastSprites(mouse, camera, function(object) {
-				console.log(object.name);
+				object.material.color = TerminUtils.createRandomColor();
 			});
         }
 
