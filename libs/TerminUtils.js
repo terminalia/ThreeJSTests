@@ -96,6 +96,10 @@ TERMINALIA.TerminUtils = function TerminUtils() {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
+    function degToRad(angle_deg) {
+        return angle_deg * (Math.PI/180);
+    }
+
     this.loadObjModel = loadObjModel;
     this.createTextureMaterial = createTextureMaterial;
     this.createTextureReflectiveMaterial = createTextureReflectiveMaterial;
@@ -105,6 +109,7 @@ TERMINALIA.TerminUtils = function TerminUtils() {
     this.randomIntFromInterval = randomIntFromInterval;
     this.createRandomColor = createRandomColor;
     this.createTexture = createTexture;
+    this.degToRad = degToRad;
     this.raycastSprites = raycastSprites;
 }
 

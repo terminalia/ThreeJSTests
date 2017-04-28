@@ -36,6 +36,8 @@
 			// INITIAL SETUP
 			//###################################################
 			renderer = new THREE.WebGLRenderer();
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 			renderer.setPixelRatio( window.devicePixelRatio );
 			//renderer.setClearColor(new THREE.Color('rgb(98, 166, 189)', 1))
 			renderer.setSize( window.innerWidth, window.innerHeight );
@@ -52,12 +54,13 @@
 
 			//Setup the camera
 			camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
-			camera.position.set(10, 10, 5);
+			camera.position.set(12, 12, 10);		
 			camera.rotateSpeed = 20.0;
-			camera.lookAt(scene.position);
 
 			//Add controls to the camera
 			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
+			camera_control.maxPolarAngle = Math.PI/2 - 0.1;
+			camera_control.enableZoom = false;
 
 			var reflectionCube = TerminUtils.createCubeMapTexture('/assets/textures/cubemaps/parliament/', '.jpg');
             reflectionCube.format = THREE.RGBFormat;
