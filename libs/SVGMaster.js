@@ -41,20 +41,17 @@ SVGMASTER.SvgMaster = function SvgMaster() {
 	}
 
 	function createSVGMesh(svg) {
-		var mesh;
 		var shape = transformSVGPath(svg.select("#out path").attr("d"));
-
-		var geometry = new THREE.ShapeGeometry( shape );
-		var material = new THREE.LineBasicMaterial( { color: 0x41b9e6, linewidth:2 } );
-		var materialMesh = new THREE.MeshLambertMaterial();
-		materialMesh.color = 0xfffff;
+		var geometry = new THREE.ShapeGeometry(shape);
+		var material = new THREE.MeshPhongMaterial({color: 0xffffff});
 		material.side = THREE.DoubleSide;
-		mesh = new THREE.Mesh( geometry, material );
+		var mesh = new THREE.Mesh(geometry, material);
 		mesh.scale.set(0.5, 0.5, 0.5);
 		mesh.rotation.x = Math.PI/2;
 		mesh.position.x = -300;
+		mesh.position.y = -0.1;
 		mesh.position.z = -50;
-			
+
 		return mesh;
 	}
 

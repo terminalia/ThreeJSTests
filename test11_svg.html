@@ -71,6 +71,7 @@
 			//addCube();
             SvgMaster.loadSvg('assets/svg/outline.svg', 'outline', function(svg){
 				svgMesh = SvgMaster.createSVGMesh(svg);
+				svgMesh.material.color = TerminUtils.createRGBColor(255, 0, 0);
 				scene.add(svgMesh);
             });
 
