@@ -20,13 +20,13 @@
 	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
 	<script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
     <script src="libs/SVGMaster.js"></script>
+	<script src="libs/TerminUtils.js"></script>
 
 	<script>
 
 		var camera, camera_control, scene, renderer, stats
-		var textureLoader, objLoader, cubeTextureLoader;
-        var svgMaster, svgMesh;
-		var rayCaster, mouse, sprite1, sprite2, sprit3;
+        var SvgMaster, svgMesh, TerminUtils;
+		var mouse, sprite1, sprite2, sprit3;
 
 		init();
 		animate();
@@ -41,13 +41,9 @@
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 
-			objLoader = new THREE.OBJLoader();
-			textureLoader = new THREE.TextureLoader();
-			cubeTextureLoader = new THREE.CubeTextureLoader();
-            rayCaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
-            svgMaster = new SVGMASTER.SvgMaster();
-
+            SvgMaster = new SVGMASTER.SvgMaster();
+			TerminUtils = new TERMINALIA.TerminUtils();
             
 			//###################################################
 			// SCENE SETUP
@@ -63,7 +59,7 @@
 			//Add controls to the camera
 			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
 
-			var reflectionCube = createCubeMapTexture('/assets/textures/cubemaps/parliament/', '.jpg');
+			var reflectionCube = TerminUtils.createCubeMapTexture('/assets/textures/cubemaps/parliament/', '.jpg');
             reflectionCube.format = THREE.RGBFormat;
 			
 			var ambientLight = new THREE.AmbientLight(0xffffff);
@@ -73,62 +69,51 @@
 			// ASSETS LOADING
 			//###################################################
 			//addCube();
-            svgMaster.loadSvg('assets/svg/outline.svg', 'outline', function(svg){
-				svgMesh = svgMaster.createSVGMesh(svg);
+            SvgMaster.loadSvg('assets/svg/outline.svg', 'outline', function(svg){
+				svgMesh = SvgMaster.createSVGMesh(svg);
 				scene.add(svgMesh);
             });
 
-			var carBodyTexture = createTexture('assets/textures/car_body.png');
-			var carBodyMat = new THREE.MeshLambertMaterial( { map: carBodyTexture, envMap: reflectionCube, combine: THREE.MixOperation, reflectivity: .5} );
-			var carBody = loadObjModel("CarBody", 'assets/models/obj/carbody.obj', carBodyMat, objLoader);
+			var carBodyMat = TerminUtils.createTextureReflectiveMaterial('assets/textures/car_body.png', reflectionCube, .5);
+			var carBody = TerminUtils.loadObjModel("CarBody", 'assets/models/obj/carbody.obj', carBodyMat);
 			carBody.scale.set(5, 5, 5);
 			scene.add(carBody);
 
 			//ADD CAR MECHANICAL PARTS
-			var carMechanicalTexture = createTexture('assets/textures/car_mechanical.png');
-			var carMechanicalMat = new THREE.MeshLambertMaterial( { map: carMechanicalTexture, envMap: reflectionCube, combine: THREE.MixOperation, reflectivity: 0.5} );
-			var carMechanical = loadObjModel("CarMechanical", 'assets/models/obj/carmechanical.obj', carMechanicalMat, objLoader);
+			var carMechanicalMat = TerminUtils.createTextureReflectiveMaterial('assets/textures/car_mechanical.png', reflectionCube, .5);
+			var carMechanical = TerminUtils.loadObjModel("CarMechanical", 'assets/models/obj/carmechanical.obj', carMechanicalMat);
 			carMechanical.scale.set(5, 5, 5);
 			scene.add(carMechanical);
 
 			//ADD CAR WHEELS
-			var carWheelsMat = createTextureMaterial('assets/textures/car_wheels.jpg');
-			var carWheels = loadObjModel("CarWheels", 'assets/models/obj/carwheels.obj', carWheelsMat, objLoader);
+			var carWheelsMat = TerminUtils.createTextureMaterial('assets/textures/car_wheels.jpg');
+			var carWheels = TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/carwheels.obj', carWheelsMat);
 			carWheels.scale.set(5, 5, 5);
 			scene.add(carWheels);
 
 			//ADD CAR TYRES
 			var carTyresMat = new THREE.MeshLambertMaterial( { color: 0xcbcfd6, envMap: reflectionCube, combine: THREE.MixOperation, reflectivity: 1.0} );
-			var carTyres = loadObjModel("CarWheels", 'assets/models/obj/cartyres.obj', carTyresMat, objLoader);
+			var carTyres = TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/cartyres.obj', carTyresMat);
 			carTyres.scale.set(5, 5, 5);
 			scene.add(carTyres);
 
 			//ADD SPRITE1
-            var iconTexture = textureLoader.load('assets/textures/circle_icon1.png');
-            var iconMat = new THREE.SpriteMaterial( { map: iconTexture, color: 0xffffff } );
-	        sprite1 = new THREE.Sprite( iconMat );
-            sprite1.name = "Sprite1";
-            sprite1.position.set(4.2, 3, .8);
+			var sprite1 = TerminUtils.createSprite('Sprite1', 'assets/textures/circle_icon1.png');
+			sprite1.position.set(4.2, 3, .8);
             sprite1.scale.set(1.5, 1.5, 1.5);
-            scene.add(sprite1);
+			scene.add(sprite1);
 
 			//ADD SPRITE2
-            iconTexture = textureLoader.load('assets/textures/circle_icon2.png');
-            iconMat = new THREE.SpriteMaterial( { map: iconTexture, color: 0xffffff } );
-	        sprite2 = new THREE.Sprite( iconMat );
-            sprite2.name = "Sprite";
-            sprite2.position.set(0, 6, -5);
+			var sprite2 = TerminUtils.createSprite('Sprite2', 'assets/textures/circle_icon2.png');
+			sprite2.position.set(0, 6, -5);
             sprite2.scale.set(1.5, 1.5, 1.5);
-            scene.add(sprite2);
+			scene.add(sprite2);
 
 			//ADD SPRITE3
-            iconTexture = textureLoader.load('assets/textures/circle_icon3.png');
-            iconMat = new THREE.SpriteMaterial( { map: iconTexture, color: 0xffffff } );
-	        sprite3 = new THREE.Sprite( iconMat );
-            sprite3.name = "Sprite";
-            sprite3.position.set(0, 4, 5);
+			var sprite3 = TerminUtils.createSprite('Sprite3', 'assets/textures/circle_icon3.png');
+			sprite3.position.set(0, 4, 5);
             sprite3.scale.set(1.5, 1.5, 1.5);
-            scene.add(sprite3);
+			scene.add(sprite3);
 
 			//###################################################
 			// GUI SETUP
@@ -158,76 +143,17 @@
 		function onMouseDown(event) {
             mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-            raycastSprites();
+            TerminUtils.raycastSprites(mouse, camera, function(object) {
+				console.log(object.name);
+			});
         }
 
 		function animate() {
-
 			renderer.render( scene, camera );
 			camera_control.update();
 			requestAnimationFrame( animate );
 			stats.update();
 		}
-
-		function raycastSprites() {
-            rayCaster.setFromCamera(mouse, camera);
-            var intersects = rayCaster.intersectObjects(scene.children);
-            if (intersects.length > 0) {
-                if (intersects[0].object.type === 'Sprite') {
-                    intersects[0].object.material.color = rgbToGLColor(randomIntFromInterval(0, 255), randomIntFromInterval(0, 255), randomIntFromInterval(0, 255));
-                }
-            }
-        }
-
-		function createTexture(textureFile) {
-			var texture = textureLoader.load(textureFile);
-
-			return texture;
-		}
-
-		function createTextureMaterial(textureFile) {
-			var texture = createTexture(textureFile);
-			var material = new THREE.MeshLambertMaterial({ map: texture});
-			return material;
-		}
-
-		function loadObjModel(name, objFile, material, loader) {
-			var container = new THREE.Object3D();
-			loader.load(objFile, function(object) {
-				object.name = name;
-				object.traverse(function(child) {
-					if (child instanceof THREE.Mesh) {
-						child.material = material;
-					}
-				});
-				container.add(object);
-			});
-
-			return container;
-		}
-
-		function createCubeMapTexture(path, format) {
-            var urls = [
-                path + 'posx' + format,
-                path + 'negx' + format,
-                path + 'posy' + format,
-                path + 'negy' + format,
-                path + 'posz' + format,
-                path + 'negz' + format
-            ];
-
-            var cubeTexture = cubeTextureLoader.load(urls);
-            return cubeTexture;
-        }
-
-		function rgbToGLColor(r, g, b) {
-			return new THREE.Color('rgb(' + r + ',' + g + ',' + b + ')');
-		}
-
-		function randomIntFromInterval(min,max) {
-            return Math.floor(Math.random()*(max-min+1)+min);
-        }
-
 </script>
 </body>
 </html>
