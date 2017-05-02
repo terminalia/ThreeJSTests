@@ -117,9 +117,11 @@
 			var carTyres = TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/cartyres.obj', carTyresMat);
 			scene.add(carTyres);
 
+			
 			//ADD SPRITE1
 			var sprite1 = TerminUtils.createSprite('Sprite1', 'assets/textures/circle_icon1.png');
             sprite1.scale.set(0.3, 0.3, 0.3);
+			console.log(sprite1);
 			sprite1.position.set(0.3, 0.7, 2.3);           
 			scene.add(sprite1);
 
@@ -166,21 +168,27 @@
 		}
 
 		function onMouseDown(event) {
-            mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-	        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-            TerminUtils.raycastSprites(mouse, camera, function(object) {
-				//object.material.color = TerminUtils.createRandomColor();
-				//tween.start();
-				if (object.name === "Sprite1") {
+			event.preventDefault();
+            var vector = new THREE.Vector3( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1, 0.5 );
+			vector.unproject(camera);
+
+            var raycaster = new THREE.Raycaster(camera.position,vector.sub(camera.position).normalize() );
+			var intersects = raycaster.intersectObjects( scene.children );
+
+			if ( intersects.length > 0 ) {
+				if (intersects[0].object.name === "Sprite1") {
 					tween1.start();
 				}
-				if (object.name === "Sprite2") {
+
+				if (intersects[0].object.name === "Sprite2") {
 					tween2.start();
 				}
-				if (object.name === "Sprite3") {
+
+				if (intersects[0].object.name === "Sprite3") {
 					tween3.start();
 				}
-			});
+				console.log(intersects[0]);
+			}
         }
 
 		function animate() {
@@ -189,6 +197,7 @@
 			camera_control.update();
 			requestAnimationFrame( animate );
 			stats.update();
+			scene.updateMatrixWorld();
 		}
 </script>
 </body>

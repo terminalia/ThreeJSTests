@@ -7,6 +7,7 @@ TERMINALIA.TerminUtils = function TerminUtils() {
     this.cubeTextureLoader = new THREE.CubeTextureLoader();
     this.textureLoader = new THREE.TextureLoader();
     this.rayCaster = new THREE.Raycaster();
+    this.rayCaster.ray.direction.set(0, -1, 0);
 
     function loadObjModel(name, objFile, material) {
         var container = new THREE.Object3D();
