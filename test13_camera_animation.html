@@ -10,6 +10,13 @@
 			background: linear-gradient(to right, #41b9e6 , #0555fa);
 			overflow: hidden;
 		}
+
+		canvas {
+			/* Disable gray overly on touch on iPAD*/
+			-webkit-tap-highlight-color: rgba(0,0,0,0);
+			-webkit-tap-highlight-color: transparent;
+			user-select: none;
+		}
 	</style>
 </head>
 <body>
@@ -63,7 +70,7 @@
 			//Add controls to the camera
 			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
 			camera_control.maxPolarAngle = Math.PI/2 - 0.1;
-			//camera_control.enableZoom = false;
+			camera_control.enableZoom = false;
             camera_control.target.set(0, 0, 0);
 			
 			tween1 = new TWEEN.Tween(camera.position)
@@ -71,6 +78,10 @@
 				.easing(TWEEN.Easing.Sinusoidal.InOut)
 				.onUpdate(function () {
 					camera.position.set(this.x, this.y, this.z);
+				})
+				.onComplete(function() {
+					console.log("End");
+					
 				});
 
 			tween2 = new TWEEN.Tween(camera.position)
@@ -78,6 +89,9 @@
 				.easing(TWEEN.Easing.Sinusoidal.InOut)
 				.onUpdate(function () {
 					camera.position.set(this.x, this.y, this.z);
+				})
+				.onComplete(function() {
+					
 				});
 
 			tween3 = new TWEEN.Tween(camera.position)
@@ -85,6 +99,9 @@
 				.easing(TWEEN.Easing.Sinusoidal.InOut)
 				.onUpdate(function () {
 					camera.position.set(this.x, this.y, this.z);
+				})
+				.onComplete(function() {
+					
 				});
 			
 
@@ -153,6 +170,7 @@
 			window.addEventListener( 'resize', onWindowResize, false );
 			window.addEventListener('mousedown', onMouseDown, false);
 			window.addEventListener('keydown', onKeyDown, false);
+			window.addEventListener("touchstart", function(){}, true);
 		}
 
 		function onKeyDown(event) {
@@ -177,17 +195,20 @@
 
 			if ( intersects.length > 0 ) {
 				if (intersects[0].object.name === "Sprite1") {
+					//camera_control.enabled = false;
 					tween1.start();
+					
 				}
 
 				if (intersects[0].object.name === "Sprite2") {
+					//camera_control.enabled = false;
 					tween2.start();
 				}
 
 				if (intersects[0].object.name === "Sprite3") {
+					//camera_control.enabled = false;
 					tween3.start();
 				}
-				console.log(intersects[0]);
 			}
         }
 
@@ -197,7 +218,7 @@
 			camera_control.update();
 			requestAnimationFrame( animate );
 			stats.update();
-			scene.updateMatrixWorld();
+			//scene.updateMatrixWorld();
 		}
 </script>
 </body>
