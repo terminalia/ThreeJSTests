@@ -16,47 +16,50 @@
 
 	<script src="bower_components/three.js/build/three.js"></script>
 	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
-	<script src="bower_components/three.js/examples/js/controls/TrackballControls.js"></script>
 	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
 	<script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
-	
-
 	<script>
 
-		var camera, camera_control, scene, renderer, stats;
+		var camera, camera_control, scene, renderer, stats
 		var textureLoader, objLoader;
 
 		init();
 		animate();
 
 		function init() {
-			// RENDERER SETUP
+			//###################################################
+			// INITIAL SETUP
+			//###################################################
 			renderer = new THREE.WebGLRenderer();
-            renderer.antialias = true;
 			renderer.setPixelRatio( window.devicePixelRatio );
+			//renderer.setClearColor(new THREE.Color('rgb(98, 166, 189)', 1))
 			renderer.shadowMap.enabled = true;
-			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			renderer.shadowMap.type = THREE.PCFShadowMap;
+			
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 
-			//LOADERS SETUP
 			textureLoader = new THREE.TextureLoader();
-            objLoader = new THREE.OBJLoader();
+			objLoader = new THREE.OBJLoader();
 
+			//###################################################
 			// SCENE SETUP
+			//###################################################
 			scene = new THREE.Scene();
-            scene.fog = new THREE.Fog( 0x59472b, 1, 10000 );
+			scene.fog = new THREE.Fog( 0x59472b, 1000, 3000 );
+
+			//Setup the camera
 			camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
-			camera.position.z = 5;
-			camera.position.y = 5;
+			camera.position.set(2, 5, 10);
+
+			//Add controls to the camera
 			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
-			
+	
+			//###################################################
 			// ASSETS LOADING
-			//PhongMaterial gives the best looking shadow
-			var floorMat = new THREE.MeshPhongMaterial();
-			floorMat.color = rgbToGLColor(0, 221, 221);
-			//floorMat.specular = rgbToGLColor(153, 153, 153);
-			floorMat.shininess = 0.1;
+			//###################################################
+			var floorMat = new THREE.MeshLambertMaterial();
+			floorMat.color = rgbToGLColor(200, 200, 200); 
 			floorMat.side = THREE.DoubleSide;
 			var floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(100, 100), floorMat);
 			floor.rotation.x = Math.PI/2;
@@ -68,39 +71,31 @@
 			cubeMat.specular = rgbToGLColor(0, 153, 0);
 			cubeMat.shininess = 15;
 			var cube = new THREE.Mesh(new THREE.BoxBufferGeometry(1, 1, 1), cubeMat);
-			cube.position.set(0, 4, 0);
+			cube.position.set(0, 1, 0);
 			cube.castShadow = true;
-			scene.add(cube); 
+			//scene.add(cube); 
 
-            var carBodyMat = new THREE.MeshPhongMaterial();
-            carBodyMat.color = rgbToGLColor(255, 100, 10);
-            carBodyMat.specular = rgbToGLColor(255, 200, 0);
-            carBodyMat.shininess = 1;
-            carBodyMat.castShadow = true;
-            var carBody = loadObjModel("CarBody", 'assets/models/obj/carbody.obj', carBodyMat, true);
-            carBody.scale.set(5, 5, 5);
-            carBody.position.set(0, 2, 0);
-            scene.add(carBody);
+			var carMaterial = new THREE.MeshPhongMaterial({color: rgbToGLColor(0, 255, 128)});
+			var car = loadObjModel("Car", 'assets/models/obj/carbody.obj', carMaterial);
 
-			// LIGHTS
 			var ambientLight = new THREE.AmbientLight();
-			ambientLight.color = rgbToGLColor(21, 21, 21);
+			ambientLight.color = rgbToGLColor(80, 80, 80);
 			scene.add(ambientLight);
 
-			var pointLight = new THREE.PointLight();
-			pointLight.color = rgbToGLColor(255, 255, 255);
-			pointLight.intensity = 1.0;
-			//Any object with a distance below this number are lit
-			pointLight.distance = 1000;
-			pointLight.decay = 2;
-			pointLight.position.set(0, 100, 0);
-			pointLight.castShadow = true;
-            pointLight.shadow.mapSize.width = 2048;
-			pointLight.shadow.mapSize.height = 2048;
+			var spotLight = new THREE.SpotLight( 0xffffff, 1, 0, Math.PI / 2 );
+			spotLight.position.set(5, 20, 0);
+			spotLight.target.position.set(0, 0, 0);
+			spotLight.castShadow = true;
+			spotLight.shadow = new THREE.LightShadow(new THREE.PerspectiveCamera(45, 1, 1, 30));
+			spotLight.shadow.bias = 0.0001;
+			spotLight.shadow.mapSize.width = 2048;
+			spotLight.shadow.mapSize.height = 2048;
+			scene.add(spotLight);
 
-			scene.add(pointLight);
-
+			scene.add(new THREE.CameraHelper(spotLight.shadow.camera));
+			//###################################################
 			// GUI SETUP
+			//###################################################
 			stats = new Stats();
 			document.body.appendChild( stats.domElement );
 			stats.domElement.style.position = 'absolute';
@@ -108,7 +103,9 @@
 			stats.domElement.style.bottom	= '0px';
 			stats.update();
 
+			//###################################################
 			// EVENTS SETUP
+			//###################################################
 			window.addEventListener( 'resize', onWindowResize, false );
 		}
 
@@ -121,33 +118,34 @@
 		}
 
 		function animate() {
+
 			renderer.render( scene, camera );
 			camera_control.update();
 			requestAnimationFrame( animate );
 			stats.update();
 		}
 
-        function loadObjModel(name, objFile, material, isCastingShadow) {
-            var container = new THREE.Object3D();
-            objLoader.load(objFile, function(object) {
-                object.name = name;
-                object.castShadow = isCastingShadow;
-                object.traverse(function(child) {
-                    if (child instanceof THREE.Mesh) {
-                        child.material = material;
-                        child.castShadow = isCastingShadow;
-                    }
-                });
-
-                container.add(object);
-            });
-            
-            return container;
-        }
-
 		function rgbToGLColor(r, g, b) {
 			return new THREE.Color('rgb(' + r + ',' + g + ',' + b + ')');
 		}
+
+		function loadObjModel(name, objFile, material) {
+			//var container = new THREE.Object3D();
+			objLoader.load(objFile, function(object) {
+				object.name = name;
+				object.traverse(function(child) {
+					if (child instanceof THREE.Mesh) {
+						child.material = material;
+						child.castShadow = true;
+						scene.add(child);
+					}
+				});
+				//container.add(object);
+			});
+
+			//return container;
+		}
+
 
 </script>
 </body>
