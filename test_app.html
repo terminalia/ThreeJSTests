@@ -10,6 +10,13 @@
 			background-color: #000000;
 			overflow: hidden;
 		}
+
+		canvas {
+			/* Disable gray overly on touch on iPAD*/
+			-webkit-tap-highlight-color: rgba(0,0,0,0);
+			-webkit-tap-highlight-color: transparent;
+			user-select: none;
+		}
 	</style>
 </head>
 <body>
@@ -22,7 +29,6 @@
     <script src="libs/SVGMaster.js"></script>
 	<script src="libs/TerminUtils.js"></script>
 	<script>
-
 		var camera, cameraOrtho, camera_control, scene, sceneOrtho, renderer, stats;
         var TerminUtils;
 		var mouse, sprite1, sprite2, sprit3;
@@ -76,6 +82,10 @@
             var ambientLight = new THREE.AmbientLight(0xffffff);
             scene.add(ambientLight);
 
+			dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+			dirLight.position.set(0, 10, 25);
+			scene.add(dirLight);
+
 			addCameraAnimations();
 			//###################################################
 			// ASSETS LOADING
@@ -83,7 +93,7 @@
 			addCar(reflectionCube);
 			addPins();
 			addFlags();
-
+			addBuildings();
 			addOrthoAssets(width, height);
 
 			
@@ -193,6 +203,15 @@
 			scene.add(plane);
 		}
 
+		function addBuildings() {
+			var simpleMat = new THREE.MeshPhongMaterial ({color: 0x2364fa});
+			simpleMat.transparent = true;
+			simpleMat.opacity = 1;
+			var circuit = TerminUtils.loadObjModel('Circuit', 'assets/models/obj/circuit.obj', simpleMat);
+			circuit.scale.set(50, 50, 50);
+			scene.add(circuit);
+		}
+
 		function addPins() {
 			pingGroup = new THREE.Group;
 			var pin1 = TerminUtils.createSprite('Pin1', 'assets/textures/circle_icon1.png');
@@ -288,8 +307,6 @@
 			var height = window.innerHeight/2;
 			orthoGlarePlane.position.set(-width + othorGlarePlaneSize/2, height - othorGlarePlaneSize/2, 1);
 		}
-
-
 </script>
 </body>
 </html>
