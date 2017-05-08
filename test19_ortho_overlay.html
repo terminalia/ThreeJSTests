@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>ThreeJS VideoTexture Test 1</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			margin: 0px;
+			background-color: #000000;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+
+	<script src="bower_components/three.js/build/three.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+	<script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
+	<script src="libs/TerminUtils.js"></script>
+	<script>
+
+		var camera, camera_control, scene, renderer, stats;
+		var textureLoader, TerminUtils;
+		var cameraOrtho, sceneOrtho, camera_control_ortho;
+		var planeOrtho, planeOrthoSize;
+		
+
+		init();
+		animate();
+
+		function init() {
+			var width = window.innerWidth;
+			var height = window.innerHeight;
+			planeOrthoSize = 1240;
+
+			//###################################################
+			// INITIAL SETUP
+			//###################################################
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setClearColor(new THREE.Color(0x0555fa))
+			renderer.setSize( width, height );
+			renderer.autoClear = false;
+			document.body.appendChild( renderer.domElement );
+
+			textureLoader = new THREE.TextureLoader();
+			TerminUtils = new TERMINALIA.TerminUtils();
+
+			//###################################################
+			// SCENE SETUP
+			//###################################################
+			scene = new THREE.Scene();
+			sceneOrtho = new THREE.Scene();
+
+			//Setup the camera
+			camera = new THREE.PerspectiveCamera( 60, width / height, 0.1, 10000 );
+			camera.position.z = 5;
+			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
+
+			cameraOrtho = new THREE.OrthographicCamera( - width / 2, width / 2, height / 2, - height / 2, 1, 10 );
+			cameraOrtho.position.z = 10;
+			
+			var ambientLight = new THREE.AmbientLight(0xfaebd7);
+            scene.add(ambientLight);
+	
+			//###################################################
+			// ASSETS LOADING
+			//###################################################
+			var carBodyMat = TerminUtils.createTextureMaterial('assets/textures/car_body.png');
+			var carBody = TerminUtils.loadObjModel("CarBody", 'assets/models/obj/carbody.obj', carBodyMat);
+			scene.add(carBody);
+
+			var gradientMap = textureLoader.load("assets/textures/test_gradient_ortho.png");
+			var gradientMaterial = new THREE.MeshBasicMaterial({map: gradientMap});
+			gradientMaterial.transparent = true;
+			gradientMaterial.opacity = .9;
+
+			planeOrtho = new THREE.Mesh(new THREE.PlaneBufferGeometry(1, 1, 1), gradientMaterial);
+			planeOrtho.scale.set(planeOrthoSize, planeOrthoSize, 1);
+			planeOrtho.position.set(-width/2 + planeOrthoSize/2, height/2 - planeOrthoSize/2, 1);
+			sceneOrtho.add(planeOrtho);
+
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			stats = new Stats();
+			document.body.appendChild( stats.domElement );
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.left	= '0px';
+			stats.domElement.style.bottom	= '0px';
+			stats.update();
+
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+			window.addEventListener( 'resize', onWindowResize, false );
+		}
+
+		function onWindowResize() {
+			var width = window.innerWidth;
+			var height = window.innerHeight;
+
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+
+			cameraOrtho.left = - width / 2;
+			cameraOrtho.right = width / 2;
+			cameraOrtho.top = height / 2;
+			cameraOrtho.bottom = - height / 2;
+			cameraOrtho.updateProjectionMatrix();
+
+			updateOrthoObjects();
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		}
+
+		function updateOrthoObjects() {
+			var width = window.innerWidth/2;
+			var height = window.innerHeight/2;
+			planeOrtho.position.set(-width + planeOrthoSize/2, height - planeOrthoSize/2, 1);
+		}
+
+		function animate(width, height) {
+			renderer.clear();
+			renderer.render( scene, camera );
+			renderer.clearDepth();
+			renderer.render(sceneOrtho, cameraOrtho);
+			requestAnimationFrame( animate );
+			stats.update();
+		}
+
+</script>
+</body>
+</html>
