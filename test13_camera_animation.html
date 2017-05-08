@@ -78,9 +78,9 @@
 				.easing(TWEEN.Easing.Sinusoidal.InOut)
 				.onUpdate(function () {
 					camera.position.set(this.x, this.y, this.z);
+					camera_control.update();
 				})
 				.onComplete(function() {
-					console.log("End");
 					
 				});
 
@@ -89,6 +89,7 @@
 				.easing(TWEEN.Easing.Sinusoidal.InOut)
 				.onUpdate(function () {
 					camera.position.set(this.x, this.y, this.z);
+					camera_control.update();
 				})
 				.onComplete(function() {
 					
@@ -99,6 +100,7 @@
 				.easing(TWEEN.Easing.Sinusoidal.InOut)
 				.onUpdate(function () {
 					camera.position.set(this.x, this.y, this.z);
+					camera_control.update();
 				})
 				.onComplete(function() {
 					
@@ -180,11 +182,9 @@
 		}
 
 		function onKeyDown(event) {
-			if (event.key === 'a') {
-				console.log(camera.position);
-				tween.start();
-			}
+
 		}
+
 		function onWindowResize() {
 			camera.aspect = window.innerWidth / window.innerHeight;
 			camera.updateProjectionMatrix();
@@ -221,10 +221,9 @@
 		function animate() {
 			TWEEN.update();
 			renderer.render( scene, camera );
-			camera_control.update();
 			requestAnimationFrame( animate );
 			stats.update();
-			//scene.updateMatrixWorld();
+			scene.updateMatrixWorld();
 		}
 </script>
 </body>
