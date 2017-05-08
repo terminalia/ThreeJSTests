@@ -10,11 +10,11 @@ TERMINALIA.TerminUtils = function TerminUtils() {
     this.rayCaster.ray.direction.set(0, -1, 0);
 
     function loadObjModel(name, objFile, material) {
-        var container = new THREE.Object3D();
-        container.name = name;
+        var container = new THREE.Group();
         self.objLoader.load(objFile, function(object) {
             object.traverse(function(child) {
                 if (child instanceof THREE.Mesh) {
+					child.name = name;
                     child.material = material;
                 }
             });
