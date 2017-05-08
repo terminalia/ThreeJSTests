@@ -29,7 +29,7 @@
 		var tween1, tween2, tween3;
 		var pingGroup;
 		var orthoGlarePlane;
-		var othorGlarePlaneSize = 1024;
+		var othorGlarePlaneSize = (window.innerWidth / window.innerHeight) * 512;
 
 		init();
 		animate();
@@ -271,6 +271,16 @@
 			orthoGlarePlane.scale.set(othorGlarePlaneSize, othorGlarePlaneSize, 1);
 			orthoGlarePlane.position.set(-width/2 + othorGlarePlaneSize/2, height/2 - othorGlarePlaneSize/2, 1);
 			sceneOrtho.add(orthoGlarePlane);
+
+			/*
+			var powerFlag = TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_power.png');
+			var imageWidth = powerFlag.material.map.image.width;
+			var imageHeight = powerFlag.material.map.image.height;
+			powerFlag.scale.set(512, 512, 1);
+			console.log(powerFlag.material);
+            powerFlag.position.set(-width/2 + 2048/2, height/2 - 600/2, 1);
+			sceneOrtho.add(powerFlag);
+			*/
 		}
 
 		function updateOrthoAssets() {
