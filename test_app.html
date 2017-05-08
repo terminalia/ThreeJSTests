@@ -1,36 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>ThreeJS VideoTexture Test 1</title>
+	<title>CubeMap Test</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 	<style>
 		body {
 			margin: 0px;
-			background-color: #0555fa;
+			background-color: #000000;
 			overflow: hidden;
-		}
-
-		canvas {
-			/* Disable gray overly on touch on iPAD*/
-			-webkit-tap-highlight-color: rgba(0,0,0,0);
-			-webkit-tap-highlight-color: transparent;
-			user-select: none;
 		}
 	</style>
 </head>
 <body>
-
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script> -->
-	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenMax.min.js"></script> -->
-    <script src="bower_components/d3/d3.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
+	<script src="bower_components/three.js/build/three.js"></script>
 	<script src="bower_components/three.js/build/three.js"></script>
 	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
 	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
 	<script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
     <script src="libs/SVGMaster.js"></script>
 	<script src="libs/TerminUtils.js"></script>
-
 	<script>
 
 		var camera, cameraOrtho, camera_control, scene, sceneOrtho, renderer, stats;
@@ -38,24 +28,26 @@
 		var mouse, sprite1, sprite2, sprit3;
 		var tween1, tween2, tween3;
 		var pingGroup;
+		var orthoGlarePlane;
+		var othorGlarePlaneSize = 1024;
 
 		init();
 		animate();
 
 		function init() {
+			var width = window.innerWidth;
+			var height = window.innerHeight;
 			//###################################################
 			// INITIAL SETUP
 			//###################################################
 			renderer = new THREE.WebGLRenderer();
-			renderer.shadowMap.enabled = true;
-			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 			renderer.setPixelRatio( window.devicePixelRatio );
 			renderer.setClearColor(new THREE.Color(0x0555fa))
-			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setSize( width, height );
 			document.body.appendChild( renderer.domElement );
 
 			TerminUtils = new TERMINALIA.TerminUtils();
-            
+
 			//###################################################
 			// SCENE SETUP
 			//###################################################
@@ -65,23 +57,16 @@
 			camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
 			camera.position.set(2, 1, 3);		
 			camera.rotateSpeed = 20.0;
-
-			//Add controls to the camera
 			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
 			camera_control.maxPolarAngle = Math.PI/2 - 0.1;
 			camera_control.enableZoom = true;
             camera_control.target.set(0, 0, 0);
-			
-			
-			
 
 			var reflectionCube = TerminUtils.createCubeMapTexture('/assets/textures/cubemaps/parliament/', '.jpg');
             reflectionCube.format = THREE.RGBFormat;
-			
-			var ambientLight = new THREE.AmbientLight(0xffffff);
+     
+            var ambientLight = new THREE.AmbientLight(0xffffff);
             scene.add(ambientLight);
-			
-			addCameraAnimations();
 
 			//###################################################
 			// ASSETS LOADING
@@ -89,10 +74,6 @@
 			addCar(reflectionCube);
 			addPins();
 			addFlags();
-			
-			
-
-			
 
 			//###################################################
 			// GUI SETUP
@@ -108,55 +89,27 @@
 			// EVENTS SETUP
 			//###################################################
 			window.addEventListener( 'resize', onWindowResize, false );
-			window.addEventListener('mousedown', onMouseDown, false);
-			window.addEventListener("touchstart", function(){}, true);
 		}
 
 		function animate() {
-			TWEEN.update();
+
 			renderer.render( scene, camera );
+			camera_control.update();
 			requestAnimationFrame( animate );
 			stats.update();
-			scene.updateMatrixWorld();
 		}
-		
-		//###################################################
-		// EVENTS LISTENERS
-		//###################################################
+
+
 		function onWindowResize() {
+
 			camera.aspect = window.innerWidth / window.innerHeight;
 			camera.updateProjectionMatrix();
 			renderer.setSize( window.innerWidth, window.innerHeight );
+
 		}
 
-		function onMouseDown(event) {
-			event.preventDefault();
-            var vector = new THREE.Vector3( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1, 0.5 );
-			vector.unproject(camera);
-
-            var raycaster = new THREE.Raycaster(camera.position,vector.sub(camera.position).normalize() );
-			var intersects = raycaster.intersectObjects( pingGroup.children );
-
-			for (var i=0; i<intersects.length; i++) {
-				console.log(intersects[0].object)
-				if (intersects[0].object.name === 'Pin1') {
-					tween1.start();
-					break;
-				}
-
-				if (intersects[0].object.name === 'Pin2') {
-					tween2.start();
-					break;
-				}
-
-				if (intersects[0].object.name === 'Pin3') {
-					tween3.start();
-					break;
-				}
-			}
-        }
-
-		//###################################################
+		
+        //###################################################
 		// SCENE CREATION
 		//###################################################
 		function addCar(reflectionCube) {
@@ -217,41 +170,8 @@
             speedFlag.position.set(0, 1.2, -2);
 			scene.add(speedFlag);
 		}
-		
-		function addCameraAnimations() {
-			tween1 = new TWEEN.Tween(camera.position)
-				.to({x: 2, y: 1, z: 4}, 2000)
-				.easing(TWEEN.Easing.Sinusoidal.InOut)
-				.onUpdate(function () {
-					camera.position.set(this.x, this.y, this.z);
-					camera_control.update();
-				})
-				.onComplete(function() {
-					
-				});
 
-			tween2 = new TWEEN.Tween(camera.position)
-				.to({x: 3, y: 3, z: 0.8}, 2000)
-				.easing(TWEEN.Easing.Sinusoidal.InOut)
-				.onUpdate(function () {
-					camera.position.set(this.x, this.y, this.z);
-					camera_control.update();
-				})
-				.onComplete(function() {
-					
-				});
 
-			tween3 = new TWEEN.Tween(camera.position)
-				.to({x: 2, y: 3, z: -3}, 2000)
-				.easing(TWEEN.Easing.Sinusoidal.InOut)
-				.onUpdate(function () {
-					camera.position.set(this.x, this.y, this.z);
-					camera_control.update();
-				})
-				.onComplete(function() {
-					
-				});
-		}
 </script>
 </body>
 </html>
