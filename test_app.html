@@ -7,7 +7,7 @@
 	<style>
 		body {
 			margin: 0px;
-			background: linear-gradient(to right, #41b9e6 , #0555fa);
+			background-color: #0555fa;
 			overflow: hidden;
 		}
 
@@ -22,7 +22,6 @@
 <body>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script> -->
-	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenMax.min.js"></script> -->
     <script src="bower_components/d3/d3.js"></script>
 	<script src="bower_components/three.js/build/three.js"></script>
 	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
@@ -45,11 +44,11 @@
 			//###################################################
 			// INITIAL SETUP
 			//###################################################
-			renderer = new THREE.WebGLRenderer({ alpha: true });
+			renderer = new THREE.WebGLRenderer();
 			renderer.shadowMap.enabled = true;
 			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 			renderer.setPixelRatio( window.devicePixelRatio );
-			//renderer.setClearColor(new THREE.Color('rgb(98, 166, 189)', 1))
+			renderer.setClearColor(0x0555fa, 1);
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 
@@ -117,7 +116,72 @@
 			//###################################################
 			// ASSETS LOADING
 			//###################################################
+			addCar(reflectionCube);
+			addPins();
+			addFlags();
 
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			stats = new Stats();
+			document.body.appendChild( stats.domElement );
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.left	= '0px';
+			stats.domElement.style.bottom	= '0px';
+			stats.update();
+
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+			window.addEventListener( 'resize', onWindowResize, false );
+			window.addEventListener('mousedown', onMouseDown, false);
+			window.addEventListener("touchstart", function(){}, true);
+		}
+
+		function animate() {
+			TWEEN.update();
+			renderer.render( scene, camera );
+			requestAnimationFrame( animate );
+			stats.update();
+		}
+
+		//###################################################
+		// EVENTS
+		//###################################################
+		function onWindowResize() {
+			console.log("Resize");
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+		}
+
+		function onMouseDown(event) {
+			event.preventDefault();
+            var vector = new THREE.Vector3( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1, 0.5 );
+			vector.unproject(camera);
+
+            var raycaster = new THREE.Raycaster(camera.position,vector.sub(camera.position).normalize() );
+			var intersects = raycaster.intersectObjects( scene.children );
+
+			if ( intersects.length > 0 ) {
+				if (intersects[0].object.name === "Sprite1") {
+					tween1.start();
+				}
+
+				if (intersects[0].object.name === "Sprite2") {
+					tween2.start();
+				}
+
+				if (intersects[0].object.name === "Sprite3") {
+					tween3.start();
+				}
+			}
+        }
+
+		//###################################################
+		// SCENE FUNCTIONS
+		//###################################################
+		function addCar(reflectionCube) {
 			var carBodyMat = TerminUtils.createTextureReflectiveMaterial('assets/textures/car_body.png', reflectionCube, .5);
 			var carBody = TerminUtils.loadObjModel("CarBody", 'assets/models/obj/carbody.obj', carBodyMat);
 			scene.add(carBody);
@@ -137,95 +201,47 @@
 			var carTyres = TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/cartyres.obj', carTyresMat);
 			scene.add(carTyres);
 
-			
+			var shadowMap = TerminUtils.createTexture("assets/textures/car_shadow_bake.png");
+			var shadowPlaneMaterial = new THREE.MeshBasicMaterial({map: shadowMap});
+			shadowPlaneMaterial.transparent = true;
+			shadowPlaneMaterial.opacity = 0.7;
+			var plane = TerminUtils.loadObjModel("ShadowPlane", 'assets/models/obj/ShadowPlane.obj', shadowPlaneMaterial);
+			scene.add(plane);
+		}
+
+		function addPins() {
 			//ADD SPRITE1
-			var sprite1 = TerminUtils.createSprite('Sprite1', 'assets/textures/circle_icon1.png');
-            sprite1.scale.set(0.3, 0.3, 0.3);
-			console.log(sprite1);
-			sprite1.position.set(0.3, 0.7, 2.3);           
-			scene.add(sprite1);
+			var pinSize = new THREE.Vector3(0.3, 0.3, 0.3);
+			var pin1 = TerminUtils.createSprite('Sprite1', 'assets/textures/circle_icon1.png');
+            pin1.scale.set(pinSize.x, pinSize.y, pinSize.z);
+			pin1.position.set(0.3, 0.7, 2.3);           
+			scene.add(pin1);
 
 			//ADD SPRITE2
-			var sprite2 = TerminUtils.createSprite('Sprite2', 'assets/textures/circle_icon2.png');
-            sprite2.scale.set(0.3, 0.3, 0.3);
-            sprite2.position.set(0.8, 0.8, 0);
-			scene.add(sprite2);
+			var pin2 = TerminUtils.createSprite('Sprite2', 'assets/textures/circle_icon2.png');
+            pin2.scale.set(pinSize.x, pinSize.y, pinSize.z);
+            pin2.position.set(0.8, 0.8, 0);
+			scene.add(pin2);
 
 			//ADD SPRITE3
-			var sprite3 = TerminUtils.createSprite('Sprite3', 'assets/textures/circle_icon3.png');
-			sprite3.scale.set(0.3, 0.3, 0.3);
-            sprite3.position.set(0, 1.2, -2);
-			scene.add(sprite3);
-
-			//ADD SPRITE3
-			var info_power = TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_power.png');
-			//info_power.scale.set(0.3, 0.3, 0.3);
-            info_power.position.set(0, 1.2, 0);
-			scene.add(info_power);
-
-			//###################################################
-			// GUI SETUP
-			//###################################################
-			stats = new Stats();
-			document.body.appendChild( stats.domElement );
-			stats.domElement.style.position = 'absolute';
-			stats.domElement.style.left	= '0px';
-			stats.domElement.style.bottom	= '0px';
-			stats.update();
-
-			//###################################################
-			// EVENTS SETUP
-			//###################################################
-			window.addEventListener( 'resize', onWindowResize, false );
-			window.addEventListener('mousedown', onMouseDown, false);
-			window.addEventListener('keydown', onKeyDown, false);
-			window.addEventListener("touchstart", function(){}, true);
+			var pin3 = TerminUtils.createSprite('Sprite3', 'assets/textures/circle_icon3.png');
+			pin3.scale.set(pinSize.x, pinSize.y, pinSize.z);
+            pin3.position.set(0, 1.2, -2);
+			scene.add(pin3);
 		}
 
-		function onKeyDown(event) {
+		function addFlags() {
+			var powerFlag = TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_power.png');
+			powerFlag.scale.set(1.5, 1.5, 1.5);
+            powerFlag.position.set(0, 1.5, 0);
+			scene.add(powerFlag);
 
+			var speedFlag = TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_speed.png');
+			speedFlag.scale.set(1.5, 1.5, 1.5);
+            speedFlag.position.set(0, 1.5, -2);
+			scene.add(speedFlag);
 		}
-		function onWindowResize() {
-			console.log("Resize");
-			camera.aspect = window.innerWidth / window.innerHeight;
-			camera.updateProjectionMatrix();
-			renderer.setSize( window.innerWidth, window.innerHeight );
-		}
-
-		function onMouseDown(event) {
-			event.preventDefault();
-            var vector = new THREE.Vector3( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1, 0.5 );
-			vector.unproject(camera);
-
-            var raycaster = new THREE.Raycaster(camera.position,vector.sub(camera.position).normalize() );
-			var intersects = raycaster.intersectObjects( scene.children );
-
-			if ( intersects.length > 0 ) {
-				if (intersects[0].object.name === "Sprite1") {
-					//camera_control.enabled = false;
-					tween1.start();
-					
-				}
-
-				if (intersects[0].object.name === "Sprite2") {
-					//camera_control.enabled = false;
-					tween2.start();
-				}
-
-				if (intersects[0].object.name === "Sprite3") {
-					//camera_control.enabled = false;
-					tween3.start();
-				}
-			}
-        }
-
-		function animate() {
-			TWEEN.update();
-			renderer.render( scene, camera );
-			//camera_control.update();
-			requestAnimationFrame( animate );
-			stats.update();
-		}
+		
 </script>
 </body>
 </html>
