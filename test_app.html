@@ -116,44 +116,10 @@
 			//###################################################
 			// ASSETS LOADING
 			//###################################################
-			var carBodyMat = TerminUtils.createTextureReflectiveMaterial('assets/textures/car_body.png', reflectionCube, .5);
-			var carBody = TerminUtils.loadObjModel("CarBody", 'assets/models/obj/carbody.obj', carBodyMat);
-			scene.add(carBody);
-
-			//ADD CAR MECHANICAL PARTS
-			var carMechanicalMat = TerminUtils.createTextureReflectiveMaterial('assets/textures/car_mechanical.png', reflectionCube, .5);
-			var carMechanical = TerminUtils.loadObjModel("CarMechanical", 'assets/models/obj/carmechanical.obj', carMechanicalMat);
-			scene.add(carMechanical);
-
-			//ADD CAR WHEELS
-			var carWheelsMat = TerminUtils.createTextureMaterial('assets/textures/car_wheels.jpg');
-			var carWheels = TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/carwheels.obj', carWheelsMat);
-			scene.add(carWheels);
-
-			//ADD CAR TYRES
-			var carTyresMat = new THREE.MeshLambertMaterial( { color: 0xcbcfd6, envMap: reflectionCube, combine: THREE.MixOperation, reflectivity: 1.0} );
-			var carTyres = TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/cartyres.obj', carTyresMat);
-			scene.add(carTyres);
-
+			addCar(reflectionCube);
+			addPins();
 			
-			//ADD SPRITE1
-			var sprite1 = TerminUtils.createSprite('Sprite1', 'assets/textures/circle_icon1.png');
-            sprite1.scale.set(0.3, 0.3, 0.3);
-			console.log(sprite1);
-			sprite1.position.set(0.3, 0.7, 2.3);           
-			scene.add(sprite1);
-
-			//ADD SPRITE2
-			var sprite2 = TerminUtils.createSprite('Sprite2', 'assets/textures/circle_icon2.png');
-            sprite2.scale.set(0.3, 0.3, 0.3);
-            sprite2.position.set(0.8, 0.8, 0);
-			scene.add(sprite2);
-
-			//ADD SPRITE3
-			var sprite3 = TerminUtils.createSprite('Sprite3', 'assets/textures/circle_icon3.png');
-			sprite3.scale.set(0.3, 0.3, 0.3);
-            sprite3.position.set(0, 1.2, -2);
-			scene.add(sprite3);
+			
 
 			//ADD SPRITE3
 			var info_power = TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_power.png');
@@ -176,14 +142,20 @@
 			//###################################################
 			window.addEventListener( 'resize', onWindowResize, false );
 			window.addEventListener('mousedown', onMouseDown, false);
-			window.addEventListener('keydown', onKeyDown, false);
 			window.addEventListener("touchstart", function(){}, true);
 		}
 
-		function onKeyDown(event) {
-
+		function animate() {
+			TWEEN.update();
+			renderer.render( scene, camera );
+			requestAnimationFrame( animate );
+			stats.update();
+			scene.updateMatrixWorld();
 		}
-
+		
+		//###################################################
+		// EVENTS LISTENERS
+		//###################################################
 		function onWindowResize() {
 			camera.aspect = window.innerWidth / window.innerHeight;
 			camera.updateProjectionMatrix();
@@ -199,31 +171,62 @@
 			var intersects = raycaster.intersectObjects( scene.children );
 
 			if ( intersects.length > 0 ) {
-				if (intersects[0].object.name === "Sprite1") {
-					//camera_control.enabled = false;
+				if (intersects[0].object.name === "Pin1") {
 					tween1.start();
-					
 				}
 
-				if (intersects[0].object.name === "Sprite2") {
-					//camera_control.enabled = false;
+				if (intersects[0].object.name === "Pin2") {
 					tween2.start();
 				}
 
-				if (intersects[0].object.name === "Sprite3") {
-					//camera_control.enabled = false;
+				if (intersects[0].object.name === "Pin3") {
 					tween3.start();
 				}
 			}
         }
 
-		function animate() {
-			TWEEN.update();
-			renderer.render( scene, camera );
-			requestAnimationFrame( animate );
-			stats.update();
-			scene.updateMatrixWorld();
+		//###################################################
+		// SCENE CREATION
+		//###################################################
+		function addCar(reflectionCube) {
+			var carBodyMat = TerminUtils.createTextureReflectiveMaterial('assets/textures/car_body.png', reflectionCube, .5);
+			var carBody = TerminUtils.loadObjModel("CarBody", 'assets/models/obj/carbody.obj', carBodyMat);
+			scene.add(carBody);
+
+			var carMechanicalMat = TerminUtils.createTextureReflectiveMaterial('assets/textures/car_mechanical.png', reflectionCube, .5);
+			var carMechanical = TerminUtils.loadObjModel("CarMechanical", 'assets/models/obj/carmechanical.obj', carMechanicalMat);
+			scene.add(carMechanical);
+
+			var carWheelsMat = TerminUtils.createTextureMaterial('assets/textures/car_wheels.jpg');
+			var carWheels = TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/carwheels.obj', carWheelsMat);
+			scene.add(carWheels);
+
+			var carTyresMat = new THREE.MeshLambertMaterial( { color: 0xcbcfd6, envMap: reflectionCube, combine: THREE.MixOperation, reflectivity: 1.0} );
+			var carTyres = TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/cartyres.obj', carTyresMat);
+			scene.add(carTyres);
 		}
+
+		function addPins() {
+			//ADD SPRITE1
+			var pin1 = TerminUtils.createSprite('Pin1', 'assets/textures/circle_icon1.png');
+            pin1.scale.set(0.3, 0.3, 0.3);
+			console.log(pin1);
+			pin1.position.set(0.3, 0.7, 2.3);           
+			scene.add(pin1);
+
+			//ADD SPRITE2
+			var pin2 = TerminUtils.createSprite('Pin2', 'assets/textures/circle_icon2.png');
+            pin2.scale.set(0.3, 0.3, 0.3);
+            pin2.position.set(0.8, 0.8, 0);
+			scene.add(pin2);
+
+			//ADD SPRITE3
+			var pin3 = TerminUtils.createSprite('Pin3', 'assets/textures/circle_icon3.png');
+			pin3.scale.set(0.3, 0.3, 0.3);
+            pin3.position.set(0, 1.2, -2);
+			scene.add(pin3);
+		}
+		
 </script>
 </body>
 </html>
