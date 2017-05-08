@@ -33,7 +33,7 @@
 
 	<script>
 
-		var camera, camera_control, scene, renderer, stats
+		var camera, cameraOrtho, camera_control, scene, sceneOrtho, renderer, stats;
         var SvgMaster, svgMesh, TerminUtils;
 		var mouse, sprite1, sprite2, sprit3;
 		var tween1, tween2, tween3;
@@ -53,8 +53,6 @@
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 
-            mouse = new THREE.Vector2();
-            SvgMaster = new SVGMASTER.SvgMaster();
 			TerminUtils = new TERMINALIA.TerminUtils();
             
 			//###################################################
@@ -118,14 +116,11 @@
 			//###################################################
 			addCar(reflectionCube);
 			addPins();
+			addFlags();
 			
 			
 
-			//ADD SPRITE3
-			var info_power = TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_power.png');
-			//info_power.scale.set(0.3, 0.3, 0.3);
-            info_power.position.set(0, 1.2, 0);
-			scene.add(info_power);
+			
 
 			//###################################################
 			// GUI SETUP
@@ -204,27 +199,44 @@
 			var carTyresMat = new THREE.MeshLambertMaterial( { color: 0xcbcfd6, envMap: reflectionCube, combine: THREE.MixOperation, reflectivity: 1.0} );
 			var carTyres = TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/cartyres.obj', carTyresMat);
 			scene.add(carTyres);
+
+			//ADD SHADOW MAP
+			var shadowMap = TerminUtils.createTexture("assets/textures/car_shadow_bake.png");
+			var shadowMapMaterial = new THREE.MeshBasicMaterial({map: shadowMap, color: 0xffffff});
+			shadowMapMaterial.transparent = true;
+			shadowMapMaterial.opacity = 0.7;
+			var plane = TerminUtils.loadObjModel("ShadowPlane", 'assets/models/obj/ShadowPlane.obj', shadowMapMaterial);
+			scene.add(plane);
 		}
 
 		function addPins() {
-			//ADD SPRITE1
 			var pin1 = TerminUtils.createSprite('Pin1', 'assets/textures/circle_icon1.png');
             pin1.scale.set(0.3, 0.3, 0.3);
-			console.log(pin1);
 			pin1.position.set(0.3, 0.7, 2.3);           
 			scene.add(pin1);
 
-			//ADD SPRITE2
 			var pin2 = TerminUtils.createSprite('Pin2', 'assets/textures/circle_icon2.png');
             pin2.scale.set(0.3, 0.3, 0.3);
             pin2.position.set(0.8, 0.8, 0);
 			scene.add(pin2);
 
-			//ADD SPRITE3
 			var pin3 = TerminUtils.createSprite('Pin3', 'assets/textures/circle_icon3.png');
 			pin3.scale.set(0.3, 0.3, 0.3);
             pin3.position.set(0, 1.2, -2);
 			scene.add(pin3);
+		}
+
+		function addFlags() {
+			var flagSize = new THREE.Vector3(1.5, 1.5, 1.5);
+			var powerFlag = TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_power.png');
+			powerFlag.scale.set(flagSize.x, flagSize.y, flagSize.z);
+            powerFlag.position.set(0, 1.2, 1);
+			scene.add(powerFlag);
+
+			var speedFlag = TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_speed.png');
+			speedFlag.scale.set(flagSize.x, flagSize.y, flagSize.z);
+            speedFlag.position.set(0, 1.2, -2);
+			scene.add(speedFlag);
 		}
 		
 </script>
