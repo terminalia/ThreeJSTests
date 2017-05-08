@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>ThreeJS VideoTexture Test 1</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			margin: 0px;
+			background-color: #000000;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+
+	<script src="bower_components/three.js/build/three.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/dat.gui.min.js"></script>
+	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+	<script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
+	<script src="libs/TerminUtils.js"></script>
+	<script>
+		THREE.ShaderTypes = {
+
+			'phongDiffuse' : {
+
+				uniforms: {
+
+					"uDirLightPos":	{ type: "v3", value: new THREE.Vector3() },
+					"uDirLightColor": { type: "c", value: new THREE.Color( 0xffffff ) },
+					"uMaterialColor":  { type: "c", value: new THREE.Color( 0xffffff ) },
+
+					uKd: {
+						type: "f",
+						value: 1.0
+					},
+					uBorder: {
+						type: "f",
+						value: 1.0
+					},
+					uTone1: {
+						type: "f",
+						value: 0.8
+					},
+					uTone2: {
+						type: "f",
+						value: 0.3
+					}
+				},
+
+				vertexShader: [
+
+					"varying vec3 vNormal;",
+					"varying vec3 vViewPosition;",
+
+					"void main() {",
+
+						"gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+						"vNormal = normalize( normalMatrix * normal );",
+						"vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );",
+						"vViewPosition = -mvPosition.xyz;",
+
+					"}"
+
+				].join("\n"),
+
+				fragmentShader: [
+
+					"uniform vec3 uMaterialColor;",
+
+					"uniform vec3 uDirLightPos;",
+					"uniform vec3 uDirLightColor;",
+
+					"uniform float uKd;",
+					"uniform float uBorder;",
+
+					"uniform float uTone1;",
+					"uniform float uTone2;",
+
+					"varying vec3 vNormal;",
+					"varying vec3 vViewPosition;",
+
+					"void main() {",
+
+						// compute direction to light
+						"vec4 lDirection = viewMatrix * vec4( uDirLightPos, 0.0 );",
+						"vec3 lVector = normalize( lDirection.xyz );",
+
+						// diffuse: N * L. Normal must be normalized, since it's interpolated.
+						"vec3 normal = normalize( vNormal );",
+						//was: "float diffuse = max( dot( normal, lVector ), 0.0);",
+						// solution
+						"float diffuse = dot( normal, lVector );",
+						"if ( diffuse > 0.6 ) { diffuse = 1.0; }",
+						"else if ( diffuse > -0.2 ) { diffuse = uTone1; }",
+						"else { diffuse = uTone2; }",
+
+						"gl_FragColor = vec4( uKd * uMaterialColor * uDirLightColor * diffuse, 1.0 );",
+
+					"}"
+
+				].join("\n")
+
+			}
+		};
+
+		var camera, camera_control, scene, renderer, stats
+		var textureLoader, TerminUtils;
+		var dirLight, toonMaterial, toonMaterialColor;
+
+		init();
+		animate();
+
+		function init() {
+			//###################################################
+			// INITIAL SETUP
+			//###################################################
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setClearColor(0x0555fa);
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+
+			textureLoader = new THREE.TextureLoader();
+			TerminUtils = new TERMINALIA.TerminUtils();
+			//###################################################
+			// SCENE SETUP
+			//###################################################
+			scene = new THREE.Scene();
+
+			//Setup the camera
+			camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.z = 5;
+
+			//Add controls to the camera
+			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
+			
+			var ambientLight = new THREE.AmbientLight(0xffffff);
+            scene.add(ambientLight);
+
+			dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+			dirLight.position.set(0, 10, 25);
+			scene.add(dirLight);
+			var helper = new THREE.DirectionalLightHelper( dirLight);
+			scene.add(helper);
+	
+			//###################################################
+			// ASSETS LOADING
+			//###################################################
+			toonMaterialColor = TerminUtils.createRGBColor(255, 0, 0);
+
+			toonMaterial = createShaderMaterial("phongDiffuse", dirLight);
+			toonMaterial.uniforms.uMaterialColor.value.copy(toonMaterialColor);
+			toonMaterial.side = THREE.DoubleSide;
+
+			var circuit = TerminUtils.loadObjModel('Circuit', 'assets/models/obj/Monkey.obj', toonMaterial);
+			scene.add(circuit);
+
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			stats = new Stats();
+			document.body.appendChild( stats.domElement );
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.left	= '0px';
+			stats.domElement.style.bottom	= '0px';
+			stats.update();
+
+			initGUI();
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+			window.addEventListener( 'resize', onWindowResize, false );
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function animate() {
+
+			renderer.render( scene, camera );
+			camera_control.update();
+			requestAnimationFrame( animate );
+			stats.update();
+		}
+
+		function addCube() {
+			var cubeGeometry = new THREE.CubeGeometry(1, 1, 1);
+			var cubeMaterial = new THREE.MeshPhongMaterial();
+			var cubeTexture = new textureLoader.load("assets/textures/crate.png");
+			cubeMaterial.map = cubeTexture;
+
+			var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+			cube.position.set(0, 0, 0);
+						
+			scene.add(cube);
+		}
+
+		function createShaderMaterial(id, light) {
+
+			var shader = THREE.ShaderTypes[id];
+			var u = THREE.UniformsUtils.clone(shader.uniforms);
+
+			var vs = shader.vertexShader;
+			var fs = shader.fragmentShader;
+
+			var material = new THREE.ShaderMaterial({ uniforms: u, vertexShader: vs, fragmentShader: fs });
+			material.uniforms.uDirLightPos.value = light.position;
+			material.uniforms.uDirLightColor.value = light.color;
+
+			return material;
+		}
+
+		function initGUI() {
+			gui = new dat.GUI();
+			var controls = new function() {
+				this.kd = 0.7;
+				this.R = 255;
+				this.G = 0;
+				this.B = 0;
+				this.tone1 = 0.7;
+				this.tone2 = 0.3;
+				this.lightPosX = 0.0;
+				this.lightPosY = 5.0;
+				this.lightPosZ = 5.0;
+
+	            this.updateToonShader = function () {
+					toonMaterial.uniforms.uKd.value = controls.kd;
+					toonMaterial.uniforms.uTone1.value = controls.tone1;
+					toonMaterial.uniforms.uTone2.value = controls.tone2;
+					toonMaterialColor = TerminUtils.createRGBColor(controls.R, controls.G, controls.B);
+					toonMaterial.uniforms.uMaterialColor.value.copy(toonMaterialColor);
+					dirLight.position.x = controls.lightPosX;
+					dirLight.position.y = controls.lightPosY;
+					dirLight.position.z = controls.lightPosZ;
+	            };
+        	};
+
+			gui.addFolder('Material Control');
+			gui.add(controls, "R", 0, 255, 1).onChange(controls.updateToonShader);
+			gui.add(controls, "G", 0, 255, 1).onChange(controls.updateToonShader);
+			gui.add(controls, "B", 0, 255, 1).onChange(controls.updateToonShader);
+			gui.add(controls, "kd", 0.0, 1.0).onChange(controls.updateToonShader);
+			gui.add(controls, "tone1", 0.0, 1.0).onChange(controls.updateToonShader);
+			gui.add(controls, "tone2", 0.0, 1.0).onChange(controls.updateToonShader);
+
+			gui.addFolder('Light Position');
+			gui.add(controls, 'lightPosX', -10, 10).onChange(controls.updateToonShader);
+			gui.add(controls, 'lightPosY', -10, 10).onChange(controls.updateToonShader);
+			gui.add(controls, 'lightPosZ', -10, 10).onChange(controls.updateToonShader);
+		}
+
+
+</script>
+</body>
+</html>

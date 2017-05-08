@@ -70,7 +70,7 @@
 			//Add controls to the camera
 			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
 			camera_control.maxPolarAngle = Math.PI/2 - 0.1;
-			camera_control.enableZoom = false;
+			camera_control.enableZoom = true;
             camera_control.target.set(0, 0, 0);
 			
 			tween1 = new TWEEN.Tween(camera.position)
@@ -153,6 +153,12 @@
 			sprite3.scale.set(0.3, 0.3, 0.3);
             sprite3.position.set(0, 1.2, -2);
 			scene.add(sprite3);
+
+			//ADD SPRITE3
+			var info_power = TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_power.png');
+			//info_power.scale.set(0.3, 0.3, 0.3);
+            info_power.position.set(0, 1.2, 0);
+			scene.add(info_power);
 
 			//###################################################
 			// GUI SETUP
