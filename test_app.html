@@ -35,7 +35,7 @@
 		var tween1, tween2, tween3;
 		var pingGroup;
 		var orthoGlarePlane;
-		var othorGlarePlaneSize = (window.innerWidth / window.innerHeight) * 512;
+		var orthoGlarePlaneSize = 512;
 
 		init();
 		animate();
@@ -141,14 +141,12 @@
 			cameraOrtho.bottom = - height / 2;
 			cameraOrtho.updateProjectionMatrix();
 
-			updateOrthoAssets();
-
-			
+			updateOrthoAssets(width, height);
 
 			//Fix for iPAD
 			setTimeout(function() {
 				renderer.setSize( window.innerWidth, window.innerHeight );
-			}, 100);
+			}, 1000);
 			
 		}
 
@@ -291,11 +289,13 @@
 			var gradientMap = TerminUtils.createTexture("assets/textures/test_gradient_ortho.png");
 			var gradientMaterial = new THREE.MeshBasicMaterial({map: gradientMap});
 			gradientMaterial.transparent = true;
-			gradientMaterial.opacity = .9;
+			gradientMaterial.opacity = 0.9;
+
+			var glarePlaneSize =  (window.innerWidth / window.innerHeight) * orthoGlarePlaneSize;
 
 			orthoGlarePlane = new THREE.Mesh(new THREE.PlaneBufferGeometry(1, 1, 1), gradientMaterial);
-			orthoGlarePlane.scale.set(othorGlarePlaneSize, othorGlarePlaneSize, 1);
-			orthoGlarePlane.position.set(-width/2 + othorGlarePlaneSize/2, height/2 - othorGlarePlaneSize/2, 1);
+			orthoGlarePlane.scale.set(glarePlaneSize, glarePlaneSize, 1);
+			orthoGlarePlane.position.set(-width/2 + glarePlaneSize/2, height/2 - glarePlaneSize/2, 1);
 			sceneOrtho.add(orthoGlarePlane);
 
 			/*
@@ -309,10 +309,10 @@
 			*/
 		}
 
-		function updateOrthoAssets() {
-			var width = window.innerWidth/2;
-			var height = window.innerHeight/2;
-			orthoGlarePlane.position.set(-width + othorGlarePlaneSize/2, height - othorGlarePlaneSize/2, 1);
+		function updateOrthoAssets(width, height) {
+			var glarePlaneSize = (width/height) * orthoGlarePlaneSize;
+			orthoGlarePlane.scale.set(glarePlaneSize, glarePlaneSize, 1);
+			orthoGlarePlane.position.set(-width/2 + glarePlaneSize/2, height/2 - glarePlaneSize/2, 1);
 		}
 </script>
 </body>
