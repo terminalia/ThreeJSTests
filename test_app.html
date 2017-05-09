@@ -142,7 +142,14 @@
 			cameraOrtho.updateProjectionMatrix();
 
 			updateOrthoAssets();
-			renderer.setSize( width, height );
+
+			
+
+			//Fix for iPAD
+			setTimeout(function() {
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}, 100);
+			
 		}
 
 		function onMouseDown(event) {
