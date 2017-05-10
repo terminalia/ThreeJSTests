@@ -39,7 +39,7 @@
         <script src="bower_components/three.js/examples/js/shaders/LuminosityHighPassShader.js"></script>
         <script src="libs/TerminUtils.js"></script>
 		<script>
-            var camera, scene, renderer, camera_control, objects = [];
+            var camera, scene, renderer, camera_control;
 			var effectFXAA, bloomPass, renderScene;
 			var hdrCubeMap;
 			var composer;
@@ -84,8 +84,8 @@
 			    // SCENE SETUP
 			    //###################################################
 				scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 2000 );
-				camera.position.set( 0.0, 35, 35 * 3.5 );
+                camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 2000 );
+				camera.position.set( 0, 0, 5 );
                 camera_control = new THREE.OrbitControls( camera, renderer.domElement );
 				camera_control.target.set( 0, 0, 0 );
 
@@ -93,7 +93,7 @@
                 scene.add(ambientLight);
 
 				var spotLight = new THREE.SpotLight( 0xffffff );
-				spotLight.position.set( 50, 100, 50 );
+				spotLight.position.set( 1, 100, 1 );
 				spotLight.angle = Math.PI / 7;
 				spotLight.penumbra = 0.8;
 				spotLight.castShadow = true;
@@ -132,13 +132,12 @@
 					standardMaterial.needsUpdate = true;
 				} );
 
-				var geometry = new THREE.TorusKnotGeometry( 18, 8, 150, 20 );
+				var geometry = new THREE.TorusKnotGeometry( 3, 1, 150, 20);
 				var torusMesh1 = new THREE.Mesh( geometry, standardMaterial );
 				torusMesh1.position.x = 0.0;
 				torusMesh1.castShadow = true;
 				torusMesh1.receiveShadow = true;
 				scene.add( torusMesh1 );
-				objects.push( torusMesh1 );
 
                 //###################################################
 			    // POST PROCESSING
