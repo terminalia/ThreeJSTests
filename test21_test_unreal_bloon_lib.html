@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>threejs webgl - materials - hdr environment mapping</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+                margin: 0px;
+                background-color: #000000;
+                overflow: hidden;
+	    	}
+	
+			.dg.ac {
+				z-index: 1 !important; /* FIX DAT.GUI */
+			}
+		</style>
+	</head>
+	<body>
+
+		<script src="bower_components/three.js/build/three.js"></script>
+        <script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+        <script src="bower_components/three.js/examples/js/libs/dat.gui.min.js"></script>
+        <script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+        <script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
+        <script src="bower_components/three.js/examples/js/loaders/RGBELoader.js"></script>
+        <script src="bower_components/three.js/examples/js/loaders/HDRCubeTextureLoader.js"></script>
+        <script src="bower_components/three.js/examples/js/pmrem/PMREMGenerator.js"></script>
+        <script src="bower_components/three.js/examples/js/pmrem/PMREMCubeUVPacker.js"></script>
+
+        <script src="bower_components/three.js/examples/js/postprocessing/EffectComposer.js"></script>
+        <script src="bower_components/three.js/examples/js/postprocessing/MaskPass.js"></script>
+        <script src="bower_components/three.js/examples/js/postprocessing/RenderPass.js"></script>
+        <script src="bower_components/three.js/examples/js/postprocessing/ShaderPass.js"></script>
+        <script src="bower_components/three.js/examples/js/postprocessing/UnrealBloomPass.js"></script>
+        <script src="bower_components/three.js/examples/js/shaders/CopyShader.js"></script>
+        <script src="bower_components/three.js/examples/js/shaders/FXAAShader.js"></script>
+        <script src="bower_components/three.js/examples/js/shaders/ConvolutionShader.js"></script>
+        <script src="bower_components/three.js/examples/js/shaders/LuminosityHighPassShader.js"></script>
+        <script src="libs/TerminUtils.js"></script>
+		<script>
+            var camera, scene, renderer, camera_control;
+			var effectFXAA, bloomPass, renderScene;
+			var hdrCubeMap;
+			var composer;
+			var standardMaterial;
+			var hdrCubeRenderTarget;
+			var stats, gui, TerminUtils;
+            var textureLoader, hdrCubeTextureLoader, hdrEnvironmentMap;
+
+			var params = {
+				projection: 'normal',
+				background: false,
+				exposure: 1.0,
+				bloomStrength: 1.5,
+				bloomThreshold: 0.85,
+				bloomRadius: 0.4
+			};
+			
+
+			init();
+			animate();
+
+			function init() {
+                
+                //###################################################
+			    // INITIAL SETUP
+			    //###################################################
+                renderer = new THREE.WebGLRenderer( { antialias: false } );
+                renderer.setPixelRatio( window.devicePixelRatio );
+                //renderer.setClearColor(new THREE.Color('rgb(98, 166, 189)', 1))
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.shadowMap.enabled = true;
+                renderer.toneMapping = THREE.LinearToneMapping;
+                renderer.gammaInput = true;
+				renderer.gammaOutput = true;
+				document.body.appendChild( renderer.domElement );
+
+                textureLoader = new THREE.TextureLoader();
+                hdrCubeTextureLoader = new THREE.HDRCubeTextureLoader()
+                TerminUtils = new TERMINALIA.TerminUtils();
+				
+                //###################################################
+			    // SCENE SETUP
+			    //###################################################
+				scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 2000 );
+				camera.position.set( 0, 0, 5 );
+                camera_control = new THREE.OrbitControls( camera, renderer.domElement );
+				camera_control.target.set( 0, 0, 0 );
+
+                var ambientLight = new THREE.AmbientLight(0xfaebd7);
+                scene.add(ambientLight);
+
+				var spotLight = new THREE.SpotLight( 0xffffff );
+				spotLight.position.set( 1, 100, 1 );
+				spotLight.angle = Math.PI / 7;
+				spotLight.penumbra = 0.8;
+				spotLight.castShadow = true;
+				scene.add( spotLight );
+
+				var hdrUrls = genCubeUrls( "assets/textures/cubemaps/pisaHDR/", ".hdr" );
+				hdrEnvironmentMap = TerminUtils.createHDRCubeMap("assets/textures/cubemaps/pisaHDR/", hdrCubeRenderTarget);
+				
+
+                //###################################################
+			    // ASSETS LOADING
+			    //###################################################
+				standardMaterial = TerminUtils.createTextureHDRMaterial("assets/textures/roughness_map.jpg", hdrEnvironmentMap);
+				
+				var geometry = new THREE.TorusKnotGeometry( 3, 1, 150, 20);
+				var torusMesh1 = new THREE.Mesh( geometry, standardMaterial );
+				torusMesh1.position.x = 0.0;
+				torusMesh1.castShadow = true;
+				torusMesh1.receiveShadow = true;
+				scene.add( torusMesh1 );
+
+                //###################################################
+			    // POST PROCESSING
+			    //###################################################
+				renderScene = new THREE.RenderPass(scene, camera);
+
+                effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
+                effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
+
+				var copyShader = new THREE.ShaderPass(THREE.CopyShader);
+				copyShader.renderToScreen = true;
+
+		        bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);//1.0, 9, 0.5, 512);
+				composer = new THREE.EffectComposer(renderer);
+		        composer.setSize(window.innerWidth, window.innerHeight);
+		        composer.addPass(renderScene);
+				composer.addPass(effectFXAA);
+		        composer.addPass(bloomPass);
+				composer.addPass(copyShader);
+				
+
+                //###################################################
+			    // GUI SETUP
+			    //###################################################
+                stats = new Stats();
+				document.body.appendChild( stats.domElement );
+                stats.update();
+
+                var gui = new dat.GUI();
+                gui.add( params, 'exposure', 0.1, 2 );
+				gui.add( params, 'bloomThreshold', 0.0, 1.0 ).onChange( function(value) {
+		            bloomPass.threshold = Number(value);
+		        });
+				gui.add( params, 'bloomStrength', 0.0, 3.0 ).onChange( function(value) {
+		            bloomPass.strength = Number(value);
+		        });
+				gui.add( params, 'bloomRadius', 0.0, 1.0 ).onChange( function(value) {
+		            bloomPass.radius = Number(value);
+		        });
+				gui.open();
+
+                //###################################################
+			    // EVENTS SETUP
+			    //###################################################
+                window.addEventListener( 'resize', onWindowResize, false );
+			}
+
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				composer.setSize( window.innerWidth, window.innerHeight );
+				effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				stats.begin();
+				render();
+				stats.end();
+
+			}
+
+            function genCubeUrls( prefix, postfix ) {
+                return [
+                    prefix + 'px' + postfix, prefix + 'nx' + postfix,
+                    prefix + 'py' + postfix, prefix + 'ny' + postfix,
+                    prefix + 'pz' + postfix, prefix + 'nz' + postfix
+                ];
+            };
+
+			function render() {
+				renderer.toneMappingExposure = Math.pow( params.exposure, 4.0 );;
+				camera.lookAt( scene.position );
+				// renderer.render( scene, camera );
+				composer.render();
+			}
+
+		</script>
+
+	</body>
+</html>
