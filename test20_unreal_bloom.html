@@ -6,26 +6,11 @@
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
 			body {
-				background-color: #000000;
-				margin: 0px;
-				overflow: hidden;
-				font-family:Monospace;
-				font-size:13px;
-				text-align:center;
-				font-weight: bold;
-			}
-			a {
-				color:#00ff78;
-			}
-
-			#info {
-				color: #fff;
-				position: absolute;
-				top: 10px;
-				width: 100%;
-				text-align: center;
-				display:block;
-			}
+                margin: 0px;
+                background-color: #000000;
+                overflow: hidden;
+	    	}
+	
 			.dg.ac {
 				z-index: 1 !important; /* FIX DAT.GUI */
 			}
@@ -54,8 +39,15 @@
         <script src="bower_components/three.js/examples/js/shaders/LuminosityHighPassShader.js"></script>
 
 		<script>
+            var camera, scene, renderer, camera_control, objects = [];
+			var effectFXAA, bloomPass, renderScene;
+			var hdrCubeMap;
+			var composer;
+			var standardMaterial;
+			var hdrCubeRenderTarget;
+			var stats, gui;
+            var textureLoader; 
 
-			var container, stats;
 			var params = {
 				projection: 'normal',
 				background: false,
@@ -64,29 +56,35 @@
 				bloomThreshold: 0.85,
 				bloomRadius: 0.4
 			};
-			var camera, scene, renderer, controls, objects = [];
-			var effectFXAA, bloomPass, renderScene;
-			var hdrCubeMap;
-			var composer;
-			var standardMaterial;
-			var hdrCubeRenderTarget;
+			
 
 			init();
 			animate();
 
 			function init() {
+                
+                //###################################################
+			    // INITIAL SETUP
+			    //###################################################
+                renderer = new THREE.WebGLRenderer( { antialias: false } );
+                renderer.setPixelRatio( window.devicePixelRatio );
+                //renderer.setClearColor(new THREE.Color('rgb(98, 166, 189)', 1))
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.shadowMap.enabled = true;
+                renderer.toneMapping = THREE.LinearToneMapping;
+				document.body.appendChild( renderer.domElement );
 
-				container = document.createElement( 'div' );
-				document.body.appendChild( container );
+                textureLoader = new THREE.TextureLoader();
+				
 
-				camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 2000 );
-				camera.position.set( 0.0, 35, 35 * 3.5 );
-
+                //###################################################
+			    // SCENE SETUP
+			    //###################################################
 				scene = new THREE.Scene();
-
-				renderer = new THREE.WebGLRenderer( { antialias: false } );
-				renderer.setClearColor( new THREE.Color( 0x111111 ) );
-				renderer.toneMapping = THREE.LinearToneMapping;
+                camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 2000 );
+				camera.position.set( 0.0, 35, 35 * 3.5 );
+                camera_control = new THREE.OrbitControls( camera, renderer.domElement );
+				camera_control.target.set( 0, 0, 0 );
 
 				standardMaterial = new THREE.MeshStandardMaterial( {
 					map: null,
@@ -95,6 +93,19 @@
 					shading: THREE.SmoothShading
 				} );
 
+                var ambientLight = new THREE.AmbientLight(0xfaebd7);
+                scene.add(ambientLight);
+
+				var spotLight = new THREE.SpotLight( 0xffffff );
+				spotLight.position.set( 50, 100, 50 );
+				spotLight.angle = Math.PI / 7;
+				spotLight.penumbra = 0.8;
+				spotLight.castShadow = true;
+				scene.add( spotLight );
+
+                //###################################################
+			    // ASSETS LOADING
+			    //###################################################
 				var geometry = new THREE.TorusKnotGeometry( 18, 8, 150, 20 );
 				var torusMesh1 = new THREE.Mesh( geometry, standardMaterial );
 				torusMesh1.position.x = 0.0;
@@ -103,7 +114,7 @@
 				scene.add( torusMesh1 );
 				objects.push( torusMesh1 );
 
-				var textureLoader = new THREE.TextureLoader();
+				
 				textureLoader.load( "assets/textures/roughness_map.jpg", function( map ) {
 					map.wrapS = THREE.RepeatWrapping;
 					map.wrapT = THREE.RepeatWrapping;
@@ -134,81 +145,60 @@
 					hdrCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
 
 				} );
-				// Lights
-
-				scene.add( new THREE.AmbientLight( 0x222222 ) );
-
-				var spotLight = new THREE.SpotLight( 0xffffff );
-				spotLight.position.set( 50, 100, 50 );
-				spotLight.angle = Math.PI / 7;
-				spotLight.penumbra = 0.8;
-				spotLight.castShadow = true;
-				scene.add( spotLight );
-
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				renderer.shadowMap.enabled = true;
-				container.appendChild( renderer.domElement );
 
 				renderScene = new THREE.RenderPass(scene, camera);
 
-		    // renderScene.clear = true;
-		    effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
-		    effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
+                // renderScene.clear = true;
+                effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
+                effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
 
 				var copyShader = new THREE.ShaderPass(THREE.CopyShader);
 				copyShader.renderToScreen = true;
 
-		    bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);//1.0, 9, 0.5, 512);
+		        bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);//1.0, 9, 0.5, 512);
 				composer = new THREE.EffectComposer(renderer);
-		    composer.setSize(window.innerWidth, window.innerHeight);
-		    composer.addPass(renderScene);
+		        composer.setSize(window.innerWidth, window.innerHeight);
+		        composer.addPass(renderScene);
 				composer.addPass(effectFXAA);
-		    composer.addPass(bloomPass);
+		        composer.addPass(bloomPass);
 				composer.addPass(copyShader);
-				//renderer.toneMapping = THREE.ReinhardToneMapping;
 				renderer.gammaInput = true;
 				renderer.gammaOutput = true;
 
-				stats = new Stats();
-				container.appendChild( stats.dom );
+                //###################################################
+			    // GUI SETUP
+			    //###################################################
+                stats = new Stats();
+				document.body.appendChild( stats.domElement );
+                stats.update();
 
-				controls = new THREE.OrbitControls( camera, renderer.domElement );
-				controls.target.set( 0, 0, 0 );
-				controls.update();
-
-				window.addEventListener( 'resize', onWindowResize, false );
-
-				var gui = new dat.GUI();
-
-				gui.add( params, 'exposure', 0.1, 2 );
+                var gui = new dat.GUI();
+                gui.add( params, 'exposure', 0.1, 2 );
 				gui.add( params, 'bloomThreshold', 0.0, 1.0 ).onChange( function(value) {
-		        bloomPass.threshold = Number(value);
-		    });
+		            bloomPass.threshold = Number(value);
+		        });
 				gui.add( params, 'bloomStrength', 0.0, 3.0 ).onChange( function(value) {
-		        bloomPass.strength = Number(value);
-		    });
+		            bloomPass.strength = Number(value);
+		        });
 				gui.add( params, 'bloomRadius', 0.0, 1.0 ).onChange( function(value) {
-		        bloomPass.radius = Number(value);
-		    });
+		            bloomPass.radius = Number(value);
+		        });
 				gui.open();
 
+                //###################################################
+			    // EVENTS SETUP
+			    //###################################################
+                window.addEventListener( 'resize', onWindowResize, false );
 			}
 
 			function onWindowResize() {
-
-				var width = window.innerWidth;
-				var height = window.innerHeight;
-
-				camera.aspect = width / height;
+				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
 
-				renderer.setSize( width, height );
-				composer.setSize( width, height );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				composer.setSize( window.innerWidth, window.innerHeight );
 				effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
 			}
-
-			//
 
 			function animate() {
 
