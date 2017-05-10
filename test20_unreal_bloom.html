@@ -37,7 +37,7 @@
         <script src="bower_components/three.js/examples/js/shaders/FXAAShader.js"></script>
         <script src="bower_components/three.js/examples/js/shaders/ConvolutionShader.js"></script>
         <script src="bower_components/three.js/examples/js/shaders/LuminosityHighPassShader.js"></script>
-
+        <script src="libs/TerminUtils.js"></script>
 		<script>
             var camera, scene, renderer, camera_control, objects = [];
 			var effectFXAA, bloomPass, renderScene;
@@ -45,8 +45,8 @@
 			var composer;
 			var standardMaterial;
 			var hdrCubeRenderTarget;
-			var stats, gui;
-            var textureLoader; 
+			var stats, gui, TerminUtils;
+            var textureLoader, hdrCubeTextureLoader;
 
 			var params = {
 				projection: 'normal',
@@ -72,11 +72,14 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				renderer.shadowMap.enabled = true;
                 renderer.toneMapping = THREE.LinearToneMapping;
+                renderer.gammaInput = true;
+				renderer.gammaOutput = true;
 				document.body.appendChild( renderer.domElement );
 
                 textureLoader = new THREE.TextureLoader();
+                hdrCubeTextureLoader = new THREE.HDRCubeTextureLoader()
+                TerminUtils = new TERMINALIA.TerminUtils();
 				
-
                 //###################################################
 			    // SCENE SETUP
 			    //###################################################
@@ -85,13 +88,6 @@
 				camera.position.set( 0.0, 35, 35 * 3.5 );
                 camera_control = new THREE.OrbitControls( camera, renderer.domElement );
 				camera_control.target.set( 0, 0, 0 );
-
-				standardMaterial = new THREE.MeshStandardMaterial( {
-					map: null,
-					color: 0xffffff,
-					metalness: 1.0,
-					shading: THREE.SmoothShading
-				} );
 
                 var ambientLight = new THREE.AmbientLight(0xfaebd7);
                 scene.add(ambientLight);
@@ -103,38 +99,8 @@
 				spotLight.castShadow = true;
 				scene.add( spotLight );
 
-                //###################################################
-			    // ASSETS LOADING
-			    //###################################################
-				var geometry = new THREE.TorusKnotGeometry( 18, 8, 150, 20 );
-				var torusMesh1 = new THREE.Mesh( geometry, standardMaterial );
-				torusMesh1.position.x = 0.0;
-				torusMesh1.castShadow = true;
-				torusMesh1.receiveShadow = true;
-				scene.add( torusMesh1 );
-				objects.push( torusMesh1 );
-
-				
-				textureLoader.load( "assets/textures/roughness_map.jpg", function( map ) {
-					map.wrapS = THREE.RepeatWrapping;
-					map.wrapT = THREE.RepeatWrapping;
-					map.anisotropy = 4;
-					map.repeat.set( 9, 2 );
-					standardMaterial.roughnessMap = map;
-					standardMaterial.bumpMap = map;
-					standardMaterial.needsUpdate = true;
-				} );
-
-				var genCubeUrls = function( prefix, postfix ) {
-					return [
-						prefix + 'px' + postfix, prefix + 'nx' + postfix,
-						prefix + 'py' + postfix, prefix + 'ny' + postfix,
-						prefix + 'pz' + postfix, prefix + 'nz' + postfix
-					];
-				};
-
-				var hdrUrls = genCubeUrls( "assets/textures/cubemaps/pisaHDR/", ".hdr" );
-				new THREE.HDRCubeTextureLoader().load( THREE.UnsignedByteType, hdrUrls, function ( hdrCubeMap ) {
+                var hdrUrls = genCubeUrls( "assets/textures/cubemaps/pisaHDR/", ".hdr" );
+				hdrCubeTextureLoader.load( THREE.UnsignedByteType, hdrUrls, function ( hdrCubeMap ) {
 
 					var pmremGenerator = new THREE.PMREMGenerator( hdrCubeMap );
 					pmremGenerator.update( renderer );
@@ -146,9 +112,39 @@
 
 				} );
 
+                //###################################################
+			    // ASSETS LOADING
+			    //###################################################
+                standardMaterial = new THREE.MeshStandardMaterial( {
+					map: null,
+					color: 0xffffff,
+					metalness: 1.0,
+					shading: THREE.SmoothShading
+				} );
+
+                textureLoader.load( "assets/textures/roughness_map.jpg", function( map ) {
+					map.wrapS = THREE.RepeatWrapping;
+					map.wrapT = THREE.RepeatWrapping;
+					map.anisotropy = 4;
+					map.repeat.set( 9, 2 );
+					standardMaterial.roughnessMap = map;
+					standardMaterial.bumpMap = map;
+					standardMaterial.needsUpdate = true;
+				} );
+
+				var geometry = new THREE.TorusKnotGeometry( 18, 8, 150, 20 );
+				var torusMesh1 = new THREE.Mesh( geometry, standardMaterial );
+				torusMesh1.position.x = 0.0;
+				torusMesh1.castShadow = true;
+				torusMesh1.receiveShadow = true;
+				scene.add( torusMesh1 );
+				objects.push( torusMesh1 );
+
+                //###################################################
+			    // POST PROCESSING
+			    //###################################################
 				renderScene = new THREE.RenderPass(scene, camera);
 
-                // renderScene.clear = true;
                 effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
                 effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
 
@@ -162,8 +158,7 @@
 				composer.addPass(effectFXAA);
 		        composer.addPass(bloomPass);
 				composer.addPass(copyShader);
-				renderer.gammaInput = true;
-				renderer.gammaOutput = true;
+				
 
                 //###################################################
 			    // GUI SETUP
@@ -210,8 +205,15 @@
 
 			}
 
-			function render() {
+            function genCubeUrls( prefix, postfix ) {
+                return [
+                    prefix + 'px' + postfix, prefix + 'nx' + postfix,
+                    prefix + 'py' + postfix, prefix + 'ny' + postfix,
+                    prefix + 'pz' + postfix, prefix + 'nz' + postfix
+                ];
+            };
 
+			function render() {
 				if ( standardMaterial !== undefined ) {
 
 					standardMaterial.roughness = 1.0;
@@ -229,19 +231,9 @@
 
 				}
 
-				renderer.toneMappingExposure = Math.pow( params.exposure, 4.0 );
-
-				var timer = Date.now() * 0.00025;
+				renderer.toneMappingExposure = Math.pow( params.exposure, 4.0 );;
 
 				camera.lookAt( scene.position );
-
-				for ( var i = 0, l = objects.length; i < l; i ++ ) {
-
-					var object = objects[ i ];
-					object.rotation.y += 0.005;
-
-				}
-
 				// renderer.render( scene, camera );
 				composer.render();
 			}
