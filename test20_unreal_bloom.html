@@ -109,6 +109,7 @@
 					pmremCubeUVPacker.update( renderer );
 
 					hdrCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
+                    standardMaterial.envMap = hdrCubeRenderTarget.texture;
 
 				} );
 
@@ -121,6 +122,9 @@
 					metalness: 1.0,
 					shading: THREE.SmoothShading
 				} );
+                standardMaterial.roughness = 1.0;
+                standardMaterial.bumpScale = - 0.05;
+                
 
                 textureLoader.load( "assets/textures/roughness_map.jpg", function( map ) {
 					map.wrapS = THREE.RepeatWrapping;
@@ -213,25 +217,7 @@
             };
 
 			function render() {
-				if ( standardMaterial !== undefined ) {
-
-					standardMaterial.roughness = 1.0;
-					standardMaterial.bumpScale = - 0.05;
-
-					var newEnvMap = standardMaterial.envMap;
-					newEnvMap = hdrCubeRenderTarget ? hdrCubeRenderTarget.texture : null;
-
-					if( newEnvMap !== standardMaterial.envMap ) {
-
-						standardMaterial.envMap = newEnvMap;
-						standardMaterial.needsUpdate = true;
-
-					}
-
-				}
-
 				renderer.toneMappingExposure = Math.pow( params.exposure, 4.0 );;
-
 				camera.lookAt( scene.position );
 				// renderer.render( scene, camera );
 				composer.render();
