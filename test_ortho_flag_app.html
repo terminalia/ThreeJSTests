@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>CubeMap Test</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			margin: 0px;
+			background-color: #000000;
+			overflow: hidden;
+		}
+
+		canvas {
+			/* Disable gray overly on touch on iPAD*/
+			-webkit-tap-highlight-color: rgba(0,0,0,0);
+			-webkit-tap-highlight-color: transparent;
+			user-select: none;
+		}
+	</style>
+</head>
+<body>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
+	<script src="bower_components/three.js/build/three.js"></script>
+	<script src="bower_components/three.js/examples/js/loaders/RGBELoader.js"></script>
+	<script src="bower_components/three.js/examples/js/loaders/HDRCubeTextureLoader.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+	<script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
+    <script src="libs/SVGMaster.js"></script>
+	<script src="libs/TerminUtils.js"></script>
+	<script>
+		var camera, cameraOrtho, camera_control, scene, sceneOrtho, renderer, stats;
+        var TerminUtils;
+		var mouse, sprite1, sprite2, sprit3;
+		var tween1, tween2, tween3;
+		var pingGroup, powerFlag, speedFlag;
+		var orthoGlarePlane;
+		var orthoGlarePlaneSize = 512;
+		var orthoFlagSize = 512;
+
+		init();
+		animate();
+
+		function init() {
+			var width = window.innerWidth;
+			var height = window.innerHeight;
+
+			//###################################################
+			// INITIAL SETUP
+			//###################################################
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setClearColor(new THREE.Color(0x0555fa))
+			renderer.setSize( width, height );
+			renderer.autoClear = false;
+			document.body.appendChild( renderer.domElement );
+
+			TerminUtils = new TERMINALIA.TerminUtils();
+
+			//###################################################
+			// SCENE SETUP
+			//###################################################
+			scene = new THREE.Scene();
+			sceneOrtho = new THREE.Scene();
+
+			//Perspective camera
+			camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.set(2, 1, 3);		
+			camera.rotateSpeed = 20.0;
+			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
+			camera_control.maxPolarAngle = Math.PI/2 - 0.1;
+			camera_control.enableZoom = true;
+            camera_control.target.set(0, 0, 0);
+
+			//Orthographic Camera
+			cameraOrtho = new THREE.OrthographicCamera( - width / 2, width / 2, height / 2, - height / 2, 1, 10 );
+			cameraOrtho.position.z = 10;
+
+			//CUBEMAP
+			var reflectionCube = TerminUtils.createCubeMapTexture('/assets/textures/cubemaps/parliament/', '.jpg');
+            reflectionCube.format = THREE.RGBFormat;
+     
+            var ambientLight = new THREE.AmbientLight(0xffffff);
+            scene.add(ambientLight);
+
+			dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+			dirLight.position.set(0, 10, 25);
+			scene.add(dirLight);
+
+			addCameraAnimations();
+			//###################################################
+			// ASSETS LOADING
+			//###################################################
+			addCar(reflectionCube);
+			addPins();
+			//addFlags();
+			addBuildings();
+			addOrthoAssets(width, height);
+
+			
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			stats = new Stats();
+			document.body.appendChild( stats.domElement );
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.left	= '0px';
+			stats.domElement.style.bottom	= '0px';
+			stats.update();
+
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+			window.addEventListener( 'resize', onWindowResize, false );
+			window.addEventListener('mousedown', onMouseDown, false);
+		}
+
+		function animate() {
+			TWEEN.update();
+			renderer.clear();
+			renderer.render( scene, camera );
+			renderer.clearDepth();
+			renderer.render(sceneOrtho, cameraOrtho);
+			requestAnimationFrame( animate );
+			stats.update();
+			scene.updateMatrixWorld();
+		}
+
+		//###################################################
+		// EVENTS LISTENERS
+		//###################################################
+		function onWindowResize() {
+			var width = window.innerWidth;
+			var height = window.innerHeight;
+
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+
+			cameraOrtho.left = - width / 2;
+			cameraOrtho.right = width / 2;
+			cameraOrtho.top = height / 2;
+			cameraOrtho.bottom = - height / 2;
+			cameraOrtho.updateProjectionMatrix();
+
+			updateOrthoAssets(width, height);
+
+			//Fix for iPAD
+			setTimeout(function() {
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}, 1000);
+			
+		}
+
+		function onMouseDown(event) {
+			event.preventDefault();
+            var vector = new THREE.Vector3( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1, 0.5 );
+			vector.unproject(camera);
+
+            var raycaster = new THREE.Raycaster(camera.position,vector.sub(camera.position).normalize() );
+			var intersects = raycaster.intersectObjects( pingGroup.children );
+
+			for (var i=0; i<intersects.length; i++) {
+				console.log(intersects[0].object)
+				if (intersects[0].object.name === 'Pin1') {
+					tween1.start();
+					break;
+				}
+
+				if (intersects[0].object.name === 'Pin2') {
+					tween2.start();
+					break;
+				}
+
+				if (intersects[0].object.name === 'Pin3') {
+					tween3.start();
+					break;
+				}
+			}
+        }
+
+
+		
+        //###################################################
+		// SCENE CREATION
+		//###################################################
+		function addCar(reflectionCube) {
+			var carBodyMat = TerminUtils.createTextureReflectiveMaterial('assets/textures/car_body.png', reflectionCube, .5);
+			var carBody = TerminUtils.loadObjModel("CarBody", 'assets/models/obj/carbody.obj', carBodyMat);
+			scene.add(carBody);
+
+			var carMechanicalMat = TerminUtils.createTextureReflectiveMaterial('assets/textures/car_mechanical.png', reflectionCube, .5);
+			var carMechanical = TerminUtils.loadObjModel("CarMechanical", 'assets/models/obj/carmechanical.obj', carMechanicalMat);
+			scene.add(carMechanical);
+
+			var carWheelsMat = TerminUtils.createTextureMaterial('assets/textures/car_wheels.jpg');
+			var carWheels = TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/carwheels.obj', carWheelsMat);
+			scene.add(carWheels);
+
+			var carTyresMat = new THREE.MeshLambertMaterial( { color: 0xcbcfd6, envMap: reflectionCube, combine: THREE.MixOperation, reflectivity: 1.0} );
+			var carTyres = TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/cartyres.obj', carTyresMat);
+			scene.add(carTyres);
+
+			//ADD SHADOW MAP
+			var shadowMap = TerminUtils.createTexture("assets/textures/car_shadow_bake.png");
+			var shadowMapMaterial = new THREE.MeshBasicMaterial({map: shadowMap, color: 0xffffff});
+			shadowMapMaterial.transparent = true;
+			shadowMapMaterial.opacity = 0.7;
+			var plane = TerminUtils.loadObjModel("ShadowPlane", 'assets/models/obj/ShadowPlane.obj', shadowMapMaterial);
+			scene.add(plane);
+		}
+
+		function addBuildings() {
+			var simpleMat = new THREE.MeshPhongMaterial ({color: 0x2364fa});
+			simpleMat.transparent = true;
+			simpleMat.opacity = 1;
+			var circuit = TerminUtils.loadObjModel('Circuit', 'assets/models/obj/circuit.obj', simpleMat);
+			circuit.scale.set(50, 50, 50);
+			scene.add(circuit);
+		}
+
+		function addPins() {
+			pingGroup = new THREE.Group;
+			var pin1 = TerminUtils.createSprite('Pin1', 'assets/textures/circle_icon1.png');
+            pin1.scale.set(0.3, 0.3, 0.3);
+			pin1.position.set(0.3, 0.7, 2.3);           
+			pingGroup.add(pin1);
+
+			var pin2 = TerminUtils.createSprite('Pin2', 'assets/textures/circle_icon2.png');
+            pin2.scale.set(0.3, 0.3, 0.3);
+            pin2.position.set(0.8, 0.8, 0);
+			pingGroup.add(pin2);
+
+			var pin3 = TerminUtils.createSprite('Pin3', 'assets/textures/circle_icon3.png');
+			pin3.scale.set(0.3, 0.3, 0.3);
+            pin3.position.set(0, 1.2, -2);
+			pingGroup.add(pin3);
+
+			scene.add(pingGroup);
+		}
+
+		function addFlags() {
+			var flagSize = new THREE.Vector3(1.5, 1.5, 1.5);
+			var powerFlag = TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_power.png');
+			powerFlag.scale.set(flagSize.x, flagSize.y, flagSize.z);
+            powerFlag.position.set(0, 1.2, 1);
+			scene.add(powerFlag);
+
+			var speedFlag = TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_speed.png');
+			speedFlag.scale.set(flagSize.x, flagSize.y, flagSize.z);
+            speedFlag.position.set(0, 1.2, -2);
+			scene.add(speedFlag);
+		}
+
+		function addCameraAnimations() {
+			tween1 = new TWEEN.Tween(camera.position)
+				.to({x: 2, y: 1, z: 4}, 2000)
+				.easing(TWEEN.Easing.Sinusoidal.InOut)
+				.onUpdate(function () {
+					camera.position.set(this.x, this.y, this.z);
+					camera_control.update();
+				})
+				.onComplete(function() {
+					
+				});
+
+			tween2 = new TWEEN.Tween(camera.position)
+				.to({x: 3, y: 3, z: 0.8}, 2000)
+				.easing(TWEEN.Easing.Sinusoidal.InOut)
+				.onUpdate(function () {
+					camera.position.set(this.x, this.y, this.z);
+					camera_control.update();
+				})
+				.onComplete(function() {
+					
+				});
+
+			tween3 = new TWEEN.Tween(camera.position)
+				.to({x: 2, y: 3, z: -3}, 2000)
+				.easing(TWEEN.Easing.Sinusoidal.InOut)
+				.onUpdate(function () {
+					camera.position.set(this.x, this.y, this.z);
+					camera_control.update();
+				})
+				.onComplete(function() {
+					
+				});
+		}
+
+		function addOrthoAssets(width, height) {
+			var gradientMap = TerminUtils.createTexture("assets/textures/test_gradient_ortho.png");
+			var gradientMaterial = new THREE.MeshBasicMaterial({map: gradientMap});
+			gradientMaterial.transparent = true;
+			gradientMaterial.opacity = 0.9;
+
+			var glarePlaneSize =  (window.innerWidth / window.innerHeight) * orthoGlarePlaneSize;
+
+			orthoGlarePlane = new THREE.Mesh(new THREE.PlaneBufferGeometry(1, 1, 1), gradientMaterial);
+			orthoGlarePlane.scale.set(glarePlaneSize, glarePlaneSize, 1);
+			orthoGlarePlane.position.set(-width/2 + glarePlaneSize/2, height/2 - glarePlaneSize/2, 1);
+			sceneOrtho.add(orthoGlarePlane);
+
+			powerFlag = TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_power.png');
+			var imageWidth = powerFlag.material.map.image.width;
+			var imageHeight = powerFlag.material.map.image.height;
+			powerFlag.scale.set(orthoFlagSize, orthoFlagSize, 1);
+			console.log(powerFlag.material);
+            powerFlag.position.set(-width/2 + orthoFlagSize * 1.5, height/2 - 600/2, 1);
+			sceneOrtho.add(powerFlag);
+		}
+
+		function updateOrthoAssets(width, height) {
+			var glarePlaneSize = (width/height) * orthoGlarePlaneSize;
+			orthoGlarePlane.scale.set(glarePlaneSize, glarePlaneSize, 1);
+			orthoGlarePlane.position.set(-width/2 + glarePlaneSize/2, height/2 - glarePlaneSize/2, 1);
+			
+			var flagSize = (width/height) * orthoFlagSize;
+			powerFlag.scale.set(flagSize, flagSize, 1);
+			powerFlag.position.set(-width/2 + flagSize, height/2 - flagSize/2, 1);
+			
+		}
+</script>
+</body>
+</html>
