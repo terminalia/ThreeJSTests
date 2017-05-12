@@ -39,6 +39,7 @@
 		var FEScene = new TERMINALIA.FEScene(document.body);
 		FEScene.render();
 		window.addEventListener('resize', FEScene.resize, false);
+		window.addEventListener('mousedown', FEScene.findObjectOnClick, false);
 
 </script>
 </body>
