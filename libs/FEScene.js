@@ -6,6 +6,7 @@ TERMINALIA.FEScene = function FEScene(container) {
     self.TerminUtils = null;
     self.renderer = null;
     self.camera = null;
+    self.cameraOrtho = null;
     self.orbit_controls = null;
     self.scene = null;
     self.stats = null;
@@ -34,12 +35,14 @@ TERMINALIA.FEScene = function FEScene(container) {
         self.scene = new THREE.Scene();
         self.pinsGroup = new THREE.Group();
         initOrbitCamera();
+        initOrthoCamera();
         addLights();
         addCubeMap('/assets/textures/cubemaps/parliament/', '.jpg');
         addAssets();
         addPins();
+        addInfoFlags();
         addHUD();
-        addCarAnimations();
+        addCameraAnimations();
     }
 
     //INIT CAMERA WITH ORBIT CONTROLS
@@ -50,6 +53,13 @@ TERMINALIA.FEScene = function FEScene(container) {
         self.orbit_controls.maxPolarAngle = Math.PI/2 - 0.1;
         self.orbit_controls.enableZoom = true;
         self.orbit_controls.target.set(0, 0, 0);
+    }
+
+    function initOrthoCamera() {
+        var width = self.container.offsetWidth;
+        var height = self.container.offsetHeight;
+        self.cameraOrtho = new THREE.OrthographicCamera( - width / 2, width / 2, height / 2, - height / 2, 1, 10 );
+        self.cameraOrtho.position.z = 10;
     }
 
     //RENDER ROUTINE
@@ -168,8 +178,22 @@ TERMINALIA.FEScene = function FEScene(container) {
         self.scene.add(self.pinsGroup);
     }
 
-    //ADD TWEEN.JS ANIMATION TO ROTATE THE CAMERA
-    function addCarAnimations() {
+    //ADD INFO FLAGS (POWER, SPEED, ...)
+    function addInfoFlags() {
+        var flagSize = new THREE.Vector3(1.5, 1.5, 1.5);
+        var powerFlag = self.TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_power.png');
+        powerFlag.scale.set(flagSize.x, flagSize.y, flagSize.z);
+        powerFlag.position.set(0, 1.2, 1);
+        self.scene.add(powerFlag);
+
+        var speedFlag = self.TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_speed.png');
+        speedFlag.scale.set(flagSize.x, flagSize.y, flagSize.z);
+        speedFlag.position.set(0, 1.2, -2);
+        self.scene.add(speedFlag);
+    }
+
+    //ADD TWEEN.JS ANIMATIONS TO ROTATE THE CAMERA
+    function addCameraAnimations() {
         tween1 = new TWEEN.Tween(self.camera.position)
             .to({x: 2, y: 1, z: 4}, 2000)
             .easing(TWEEN.Easing.Sinusoidal.InOut)
@@ -206,6 +230,7 @@ TERMINALIA.FEScene = function FEScene(container) {
         self.cameraAnimations.push(tween3);
     }
 
+    //RUN CAMERA ANIMATION[INDEX]
     function startCameraAnimation(index) {
         self.cameraAnimations[index].start();
     }
