@@ -22,7 +22,8 @@
 <body>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
 	<script src="bower_components/three.js/build/three.js"></script>
-	<script src="bower_components/three.js/build/three.js"></script>
+	<script src="bower_components/three.js/examples/js/loaders/RGBELoader.js"></script>
+	<script src="bower_components/three.js/examples/js/loaders/HDRCubeTextureLoader.js"></script>
 	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
 	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
 	<script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
@@ -32,7 +33,7 @@
 		var camera, cameraOrtho, camera_control, scene, sceneOrtho, renderer, stats;
         var TerminUtils;
 		var mouse, sprite1, sprite2, sprit3;
-		var tween1, tween2, tween3;
+		var tween1, tween2, tween3, tween4;
 		var pingGroup;
 		var orthoGlarePlane;
 		var orthoGlarePlaneSize = 512;
@@ -47,7 +48,7 @@
 			//###################################################
 			// INITIAL SETUP
 			//###################################################
-			renderer = new THREE.WebGLRenderer();
+			renderer = new THREE.WebGLRenderer({antialiasing: true});
 			renderer.setPixelRatio( window.devicePixelRatio );
 			renderer.setClearColor(new THREE.Color(0x0555fa))
 			renderer.setSize( width, height );
@@ -70,6 +71,10 @@
 			camera_control.maxPolarAngle = Math.PI/2 - 0.1;
 			camera_control.enableZoom = true;
             camera_control.target.set(0, 0, 0);
+			camera_control.enableDampling = true;
+			camera_control.dampFactor = 0.25;
+			
+			console.log(camera_control)
 
 			//Orthographic Camera
 			cameraOrtho = new THREE.OrthographicCamera( - width / 2, width / 2, height / 2, - height / 2, 1, 10 );
@@ -112,6 +117,7 @@
 			//###################################################
 			window.addEventListener( 'resize', onWindowResize, false );
 			window.addEventListener('mousedown', onMouseDown, false);
+			window.addEventListener('keydown', onKeyDown, false);
 		}
 
 		function animate() {
@@ -140,7 +146,7 @@
 			cameraOrtho.top = height / 2;
 			cameraOrtho.bottom = - height / 2;
 			cameraOrtho.updateProjectionMatrix();
-
+	
 			updateOrthoAssets(width, height);
 
 			//Fix for iPAD
@@ -148,6 +154,10 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 			}, 1000);
 			
+		}
+
+		function onKeyDown(event) {
+			tween4.start();
 		}
 
 		function onMouseDown(event) {
@@ -276,6 +286,17 @@
 			tween3 = new TWEEN.Tween(camera.position)
 				.to({x: 2, y: 3, z: -3}, 2000)
 				.easing(TWEEN.Easing.Sinusoidal.InOut)
+				.onUpdate(function () {
+					camera.position.set(this.x, this.y, this.z);
+					camera_control.update();
+				})
+				.onComplete(function() {
+					
+				});
+
+			tween4 = new TWEEN.Tween(camera.position)
+				.to({x: -95, y: 98, z: -419}, 5000)
+				.easing(TWEEN.Easing.Exponential.InOut)
 				.onUpdate(function () {
 					camera.position.set(this.x, this.y, this.z);
 					camera_control.update();

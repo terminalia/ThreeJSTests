@@ -49,11 +49,9 @@
             var textureLoader, hdrCubeTextureLoader, hdrEnvironmentMap;
 
 			var params = {
-				projection: 'normal',
-				background: false,
 				exposure: 1.0,
-				bloomStrength: 1.5,
-				bloomThreshold: 0.85,
+				bloomStrength: 0.97,
+				bloomThreshold: 0.15,
 				bloomRadius: 0.4
 			};
 			
@@ -85,7 +83,7 @@
 			    //###################################################
 				scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 2000 );
-				camera.position.set( 0, 0, 5 );
+				camera.position.set( 2, 2, 5 );
                 camera_control = new THREE.OrbitControls( camera, renderer.domElement );
 				camera_control.target.set( 0, 0, 0 );
 
@@ -106,20 +104,22 @@
                 //###################################################
 			    // ASSETS LOADING
 			    //###################################################
-				standardMaterial = TerminUtils.createTextureHDRMaterial("assets/textures/car_body.png", hdrEnvironmentMap);
-				//standardMaterial.map.repeat.set( 9, 2 );
-				//standardMaterial.map.wrapS = THREE.RepeatWrapping;
-				//standardMaterial.map.wrapT = THREE.RepeatWrapping;
-				
-				var geometry = new THREE.TorusKnotGeometry( 3, 1, 150, 20);
-				var torusMesh1 = new THREE.Mesh( geometry, standardMaterial );
-				torusMesh1.position.x = 0.0;
-				torusMesh1.castShadow = true;
-				torusMesh1.receiveShadow = true;
-				//scene.add( torusMesh1 );
-
-				var carBody = TerminUtils.loadObjModel("CarBody", 'assets/models/obj/carbody.obj', standardMaterial);
+				var carBodyMat = TerminUtils.createTextureHDRMaterial("assets/textures/car_body.png", hdrEnvironmentMap);
+				var carBody = TerminUtils.loadObjModel("CarBody", 'assets/models/obj/carbody.obj', carBodyMat);
 				scene.add(carBody);
+
+				var carMechaMat = TerminUtils.createTextureHDRMaterial("assets/textures/car_mechanical.png", hdrEnvironmentMap);
+				var carMecha = TerminUtils.loadObjModel("CarMecha", 'assets/models/obj/carmechanical.obj', carMechaMat);
+				scene.add(carMecha);
+
+				var carWheelsMat = TerminUtils.createTextureMaterial('assets/textures/car_wheels.jpg');
+				var carWheels = TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/carwheels.obj', carWheelsMat);
+				scene.add(carWheels);		
+
+				var carTyresMat = new THREE.MeshLambertMaterial( { color: 0xcbcfd6, envMap: hdrEnvironmentMap, combine: THREE.MixOperation, reflectivity: 1.0} );
+				var carTyres = TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/cartyres.obj', carTyresMat);
+				scene.add(carTyres);
+				
                 //###################################################
 			    // POST PROCESSING
 			    //###################################################
@@ -131,7 +131,7 @@
 				var copyShader = new THREE.ShaderPass(THREE.CopyShader);
 				copyShader.renderToScreen = true;
 
-		        bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);//1.0, 9, 0.5, 512);
+		        bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), params.bloomStrength, params.bloomRadius, params.bloomThreshold);//1.0, 9, 0.5, 512);
 				composer = new THREE.EffectComposer(renderer);
 		        composer.setSize(window.innerWidth, window.innerHeight);
 		        composer.addPass(renderScene);
