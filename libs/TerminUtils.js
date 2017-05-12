@@ -5,6 +5,7 @@ TERMINALIA.TerminUtils = function TerminUtils() {
     var self = this;
     this.objLoader = new THREE.OBJLoader();
     this.cubeTextureLoader = new THREE.CubeTextureLoader();
+    this.hdrCubeTextureLoader = new THREE.HDRCubeTextureLoader();
     this.textureLoader = new THREE.TextureLoader();
     this.rayCaster = new THREE.Raycaster();
     this.rayCaster.ray.direction.set(0, -1, 0);
@@ -52,6 +53,28 @@ TERMINALIA.TerminUtils = function TerminUtils() {
         return material;
     }
 
+    function createTextureHDRMaterial(texture_file, hdrEnvironmentMap) {
+
+        var texture = self.textureLoader.load( texture_file);
+        var material = new THREE.MeshStandardMaterial( {
+            map: null,
+            color: 0xffffff,
+            //metalness: 0.5,
+            shading: THREE.SmoothShading
+        } );
+        material.map = texture;
+        material.map.anisotropy = 4;
+        material.roughnessMap = texture;
+        material.roughness = 1.0;
+        material.combine = THREE.MixOperation;
+        material.envMap = hdrEnvironmentMap;
+        material.reflectivity = 0.9;
+        material.metalness = 1.0;
+        
+
+        return material;
+    }
+
     function createSprite(name, texture_file) {
         var iconTexture = self.createTexture(texture_file);
         var iconMat = new THREE.SpriteMaterial( { map: iconTexture, color: 0xffffff } );
@@ -73,6 +96,34 @@ TERMINALIA.TerminUtils = function TerminUtils() {
 
         var cubeTexture = self.cubeTextureLoader.load(urls);
         return cubeTexture;
+    }
+
+    function createHDRCubeMap(path, hdrCubeRenderTarget) {
+        var hdrUrls = loadHDRCubeMapUrls(path, '.hdr');
+        var hdrEnvironmentMap = self.hdrCubeTextureLoader.load( THREE.UnsignedByteType, hdrUrls, function ( hdrCubeMap, hdrCubeRenderTarget  ) {
+
+            var pmremGenerator = new THREE.PMREMGenerator( hdrCubeMap );
+            pmremGenerator.update( renderer );
+
+            var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker( pmremGenerator.cubeLods );
+            pmremCubeUVPacker.update( renderer );
+
+            hdrCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
+            return hdrCubeRenderTarget.texture;
+        } );
+
+        return hdrEnvironmentMap;
+    }
+
+    function loadHDRCubeMapUrls(path, format) {
+        return [
+            path + 'px' + format, 
+            path + 'nx' + format,
+            path + 'py' + format, 
+            path + 'ny' + format,
+            path + 'pz' + format, 
+            path + 'nz' + format
+        ];
     }
 
     function createTexture(textureFile) {
@@ -112,5 +163,8 @@ TERMINALIA.TerminUtils = function TerminUtils() {
     this.createTexture = createTexture;
     this.degToRad = degToRad;
     this.raycastSprites = raycastSprites;
+    this.loadHDRCubeMapUrls = loadHDRCubeMapUrls;
+    this.createHDRCubeMap = createHDRCubeMap;
+    this.createTextureHDRMaterial = createTextureHDRMaterial;
 }
 
