@@ -9,11 +9,13 @@ TERMINALIA.FEScene = function FEScene(container) {
     self.cameraOrtho = null;
     self.orbit_controls = null;
     self.scene = null;
+    self.sceneOrtho = null;
     self.stats = null;
     self.container = null;
     self.reflectionMap = null;
     self.pinsGroup = null;
     self.cameraAnimations = new Array();
+    self.glarePlaneSize = 512;
 
     init(container)
     
@@ -23,6 +25,7 @@ TERMINALIA.FEScene = function FEScene(container) {
         self.renderer = new THREE.WebGLRenderer();
         self.renderer.setClearColor(new THREE.Color(0x0555fa))
         self.renderer.setPixelRatio(window.devicePixelRatio);
+        self.renderer.autoClear = false;
         self.renderer.setSize(self.container.offsetWidth, self.container.offsetHeight);
         self.container.appendChild(self.renderer.domElement);
         self.TerminUtils =  new TERMINALIA.TerminUtils();
@@ -33,6 +36,7 @@ TERMINALIA.FEScene = function FEScene(container) {
     //INIT THE SCENE
     function initScene() {
         self.scene = new THREE.Scene();
+        self.sceneOrtho = new THREE.Scene();
         self.pinsGroup = new THREE.Group();
         initOrbitCamera();
         initOrthoCamera();
@@ -40,6 +44,7 @@ TERMINALIA.FEScene = function FEScene(container) {
         addCubeMap('/assets/textures/cubemaps/parliament/', '.jpg');
         addAssets();
         addPins();
+        addOrthoAssets();
         addInfoFlags();
         addHUD();
         addCameraAnimations();
@@ -65,8 +70,11 @@ TERMINALIA.FEScene = function FEScene(container) {
     //RENDER ROUTINE
     function render() {
         TWEEN.update();
-        requestAnimationFrame(render);
+        self.renderer.clear();
         self.renderer.render(self.scene, self.camera);
+        self.renderer.clearDepth();
+        self.renderer.render(self.sceneOrtho, self.cameraOrtho);
+        requestAnimationFrame(render);
         self.stats.update();
     }
 
@@ -74,6 +82,13 @@ TERMINALIA.FEScene = function FEScene(container) {
     function resize() {
         self.camera.aspect = self.container.offsetWidth/self.container.offsetHeight;
         self.camera.updateProjectionMatrix();
+        self.cameraOrtho.left = - self.container.offsetWidth / 2;
+        self.cameraOrtho.right = self.container.offsetWidth / 2;
+        self.cameraOrtho.top = self.container.offsetHeight / 2;
+        self.cameraOrtho.bottom = - self.container.offsetHeight / 2;
+        self.cameraOrtho.updateProjectionMatrix();
+
+        updateOrthoAssetsSize();
         self.renderer.setSize(self.container.offsetWidth, self.container.offsetHeight);
     }
 
@@ -228,6 +243,36 @@ TERMINALIA.FEScene = function FEScene(container) {
                 
             });
         self.cameraAnimations.push(tween3);
+    }
+
+    //ADD ORTHO ASSETS
+    function addOrthoAssets() {
+        var width = self.container.offsetWidth;
+        var height = self.container.offsetHeight;
+
+        var gradientMap = self.TerminUtils.createTexture("assets/textures/test_gradient_ortho.png");
+        var gradientMaterial = new THREE.MeshBasicMaterial({map: gradientMap});
+        gradientMaterial.transparent = true;
+        gradientMaterial.opacity = 1;
+
+        var size =  (width / height) * self.glarePlaneSize;
+
+        var orthoGlarePlane = new THREE.Mesh(new THREE.PlaneBufferGeometry(1, 1, 1), gradientMaterial);
+        orthoGlarePlane.scale.set(size, size, 1);
+        orthoGlarePlane.position.set(-width/2 + size/2, height/2 - size/2, 1);
+        self.sceneOrtho.add(orthoGlarePlane);
+    }
+
+    function updateOrthoAssetsSize() {
+        var width = self.container.offsetWidth;
+        var height = self.container.offsetHeight;
+
+        var size = (width/height) * self.glarePlaneSize;
+
+        for (var i=0; i<self.sceneOrtho.children.length; i++) {
+            self.sceneOrtho.children[i].scale.set(size, size, 1);
+            self.sceneOrtho.children[i].position.set(-width/2 + size/2, height/2 - size/2, 1);
+        }
     }
 
     //RUN CAMERA ANIMATION[INDEX]
