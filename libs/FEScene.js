@@ -1,6 +1,6 @@
 window.TERMINALIA = window.TERMINALIA || {};
 
-TERMINALIA.FEScene = function FEScene(container) {
+TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
 
     var self = this;
     self.TerminUtils = null;
@@ -16,6 +16,8 @@ TERMINALIA.FEScene = function FEScene(container) {
     self.pinsGroup = null;
     self.cameraAnimations = new Array();
     self.glarePlaneSize = 512;
+    self.customShaders = CustomShaders;
+    self.dirLight = null;
 
     init(container)
     
@@ -40,7 +42,7 @@ TERMINALIA.FEScene = function FEScene(container) {
         self.pinsGroup = new THREE.Group();
         initOrbitCamera();
         initOrthoCamera();
-        addLights();
+        
         addCubeMap('/assets/textures/cubemaps/parliament/', '.jpg');
         addAssets();
         addPins();
@@ -121,10 +123,6 @@ TERMINALIA.FEScene = function FEScene(container) {
     function addLights() {
         var ambientLight = new THREE.AmbientLight(0xfaebd7);
         self.scene.add(ambientLight);
-
-        dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        dirLight.position.set(0, 10, 25);
-        self.scene.add(dirLight);
     }
 
     function addHUD() {
@@ -140,10 +138,32 @@ TERMINALIA.FEScene = function FEScene(container) {
 
     //ADD CIRCUIT
     function addCircuit() {
-        var simpleMat = new THREE.MeshPhongMaterial ({color: 0x2364fa});
-        simpleMat.transparent = true;
-        simpleMat.opacity = 1;
-        var circuit = self.TerminUtils.loadObjModel('Circuit', 'assets/models/obj/berlin_04.obj', simpleMat);
+        var toonShader = self.customShaders['ToonShader'];
+        var uniforms_ = THREE.UniformsUtils.clone(toonShader.uniforms);
+
+        var vs = toonShader.vertexShader;
+        var fs = toonShader.fragmentShader;
+
+        var dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(0, 10, -25);
+        self.scene.add(dirLight);
+        var helper = new THREE.DirectionalLightHelper( dirLight);
+        self.scene.add(helper);
+
+        var toonMaterial = new THREE.ShaderMaterial({
+            uniforms: uniforms_,
+            vertexShader: vs,
+            fragmentShader: fs,
+        });
+
+        //0x0555fc
+        toonMaterial.uniforms.uMaterialColor.value = new THREE.Color(0xa780fc);
+        toonMaterial.uniforms.uTone1.value = 0.76;
+        toonMaterial.uniforms.uTone2.value = 0.76;
+        toonMaterial.uniforms.uDirLightPos.value = dirLight.position;
+        toonMaterial.uniforms.uDirLightColor.value = dirLight.color;
+
+        var circuit = self.TerminUtils.loadObjModel('Circuit', 'assets/models/obj/berlin_04.obj', toonMaterial);
         circuit.scale.set(50, 50, 50);
         self.scene.add(circuit);
     }

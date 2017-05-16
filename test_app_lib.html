@@ -29,6 +29,7 @@
 	<script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
     <script src="libs/SVGMaster.js"></script>
 	<script src="libs/TerminUtils.js"></script>
+	<script src="libs/CustomShaders.js"></script>
     <script src="libs/FEScene.js"></script>
 
 	<script>
@@ -36,7 +37,7 @@
 		var camera, camera_control, scene, renderer, stats
 		var textureLoader
 		
-		var FEScene = new TERMINALIA.FEScene(document.body);
+		var FEScene = new TERMINALIA.FEScene(document.body, TERMINALIA.CustomShaders);
 		FEScene.render();
 		window.addEventListener('resize', FEScene.resize, false);
 		window.addEventListener('mousedown', FEScene.findObjectOnClick, false);
