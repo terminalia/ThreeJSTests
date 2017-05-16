@@ -22,7 +22,7 @@ TERMINALIA.FEScene = function FEScene(container) {
     //CONSTRUCTOR
     function init(container) {
         self.container = container;
-        self.renderer = new THREE.WebGLRenderer();
+        self.renderer = new THREE.WebGLRenderer({ antialias: true });
         self.renderer.setClearColor(new THREE.Color(0x0555fa))
         self.renderer.setPixelRatio(window.devicePixelRatio);
         self.renderer.autoClear = false;
@@ -44,7 +44,7 @@ TERMINALIA.FEScene = function FEScene(container) {
         addCubeMap('/assets/textures/cubemaps/parliament/', '.jpg');
         addAssets();
         addPins();
-        addOrthoAssets();
+        //addOrthoAssets();
         addInfoFlags();
         addHUD();
         addCameraAnimations();
@@ -116,12 +116,7 @@ TERMINALIA.FEScene = function FEScene(container) {
         self.reflectionMap = self.TerminUtils.createCubeMapTexture(path, format);
         self.reflectionMap.format = THREE.RGBFormat;
     }
-    
-    //ADD VARIOUS ASSETS TO THE SCENE
-    function addAssets() {
-        addCar();
-    }
-    
+
     //ADD VARIOUS LIGHTS TO THE SCENE
     function addLights() {
         var ambientLight = new THREE.AmbientLight(0xfaebd7);
@@ -135,6 +130,22 @@ TERMINALIA.FEScene = function FEScene(container) {
     function addHUD() {
         self.stats = new Stats();
         self.container.appendChild(self.stats.domElement);
+    }
+
+    //ADD VARIOUS ASSETS TO THE SCENE
+    function addAssets() {
+        addCar();
+        addCircuit();
+    }
+
+    //ADD CIRCUIT
+    function addCircuit() {
+        var simpleMat = new THREE.MeshPhongMaterial ({color: 0x2364fa});
+        simpleMat.transparent = true;
+        simpleMat.opacity = 1;
+        var circuit = self.TerminUtils.loadObjModel('Circuit', 'assets/models/obj/berlin_04.obj', simpleMat);
+        circuit.scale.set(50, 50, 50);
+        self.scene.add(circuit);
     }
 
     //ASSETS TO CREATE THE CAR
