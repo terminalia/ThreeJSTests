@@ -14,7 +14,6 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     self.container = null;
     self.reflectionMap = null;
     self.pinsGroup = null;
-    self.cameraAnimations = new Array();
     self.glarePlaneSize = 312;
     self.customShaders = CustomShaders;
     self.dirLight = null;
