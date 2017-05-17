@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>ThreeJS VideoTexture Test 1</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			margin: 0px;
+			background-color: #000000;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+
+	<script src="bower_components/three.js/build/three.js"></script>
+    <script src="bower_components/three.js/examples/js/loaders/RGBELoader.js"></script>
+    <script src="bower_components/three.js/examples/js/loaders/HDRCubeTextureLoader.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+	<script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
+	<script src="libs/TerminUtils.js"></script>
+	<script>
+
+		var camera, camera_control, scene, renderer, stats
+		var textureLoader, TerminUtils;
+
+		init();
+		animate();
+
+		function init() {
+			//###################################################
+			// INITIAL SETUP
+			//###################################################
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setClearColor(new THREE.Color(0x0555fa))
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+
+			textureLoader = new THREE.TextureLoader();
+			TerminUtils = new TERMINALIA.TerminUtils();
+
+			//###################################################
+			// SCENE SETUP
+			//###################################################
+			scene = new THREE.Scene();
+
+			//Setup the camera
+			camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 10000 );
+			camera.position.z = 5;
+
+			//Add controls to the camera
+			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
+			
+			var ambientLight = new THREE.AmbientLight(0xffffff);
+            scene.add(ambientLight);
+			
+			var reflectionCube = TerminUtils.createCubeMapTexture('/assets/textures/cubemaps/parliament/', '.jpg');
+            reflectionCube.format = THREE.RGBFormat;
+
+			//###################################################
+			// ASSETS LOADING
+			//###################################################
+		
+			
+			var worldMap = textureLoader.load("assets/textures/world-tex.png");
+            var worldBumMap = textureLoader.load("assets/textures/world_bump.jpg");
+			var worldMaterial = new THREE.MeshLambertMaterial({map: worldMap, color: 0xffffff});
+			worldMaterial.transparent = true;
+			worldMaterial.opacity = 1;
+            //worldMaterial.bumpMap = worldBumMap;
+			var world = TerminUtils.loadObjModel("World", 'assets/models/obj/World.obj', worldMaterial);
+            world.wireframe = true;
+			scene.add(world);
+
+
+            var geo = new THREE.EdgesGeometry( new THREE.SphereGeometry(0.99, 40, 40) ); // or WireframeGeometry
+            var mat = new THREE.LineBasicMaterial( { color: 0x41b9e6, linewidth: 1 } );
+            mat.transparent = true;
+            mat.opacity = 0.2;
+            var wireframe = new THREE.LineSegments( geo, mat );
+            world.add( wireframe );
+
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			stats = new Stats();
+			document.body.appendChild( stats.domElement );
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.left	= '0px';
+			stats.domElement.style.bottom	= '0px';
+			stats.update();
+
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+			window.addEventListener( 'resize', onWindowResize, false );
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function animate() {
+
+			renderer.render( scene, camera );
+			camera_control.update();
+			requestAnimationFrame( animate );
+			stats.update();
+		}
+
+		function addCube() {
+			var cubeGeometry = new THREE.CubeGeometry(1, 1, 1);
+			var cubeMaterial = new THREE.MeshPhongMaterial();
+			var cubeTexture = new textureLoader.load("assets/textures/crate.png");
+			cubeMaterial.map = cubeTexture;
+
+			var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+			cube.position.set(0, 0, 0);
+						
+			scene.add(cube);
+		}
+
+</script>
+</body>
+</html>
