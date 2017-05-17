@@ -15,7 +15,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     self.reflectionMap = null;
     self.pinsGroup = null;
     self.cameraAnimations = new Array();
-    self.glarePlaneSize = 512;
+    self.glarePlaneSize = 312;
     self.customShaders = CustomShaders;
     self.dirLight = null;
 
@@ -42,11 +42,11 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         self.pinsGroup = new THREE.Group();
         initOrbitCamera();
         initOrthoCamera();
-        
+        addLights();
         addCubeMap('/assets/textures/cubemaps/parliament/', '.jpg');
         addAssets();
         addPins();
-        //addOrthoAssets();
+        addOrthoAssets();
         addInfoFlags();
         addHUD();
         addCameraAnimations();
@@ -157,7 +157,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         });
 
         //0x0555fc
-        toonMaterial.uniforms.uMaterialColor.value = new THREE.Color(0xa780fc);
+        toonMaterial.uniforms.uMaterialColor.value = new THREE.Color(0x0555fc);
         toonMaterial.uniforms.uTone1.value = 0.76;
         toonMaterial.uniforms.uTone2.value = 0.76;
         toonMaterial.uniforms.uDirLightPos.value = dirLight.position;

@@ -41,6 +41,9 @@
 		FEScene.render();
 		window.addEventListener('resize', FEScene.resize, false);
 		window.addEventListener('mousedown', FEScene.findObjectOnClick, false);
+		window.addEventListener('keydown', function(event) {
+			console.log("KeyCode:",event.keyCode);
+		});
 
 </script>
 </body>
