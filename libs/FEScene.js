@@ -51,7 +51,11 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         addHUD();
     }
 
-    //INIT CAMERA WITH ORBIT CONTROLS
+    //###########################################################################################################
+    // CAMERAS
+    //###########################################################################################################
+
+    //Init borbit camera
     function initOrbitCamera() {
         self.camera = new THREE.PerspectiveCamera( 60, self.container.offsetWidth/self.container.offsetHeight, 0.1, 10000 );
         self.camera.position.set(2, 1, 3);
@@ -61,6 +65,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         self.orbit_controls.target.set(0, 0, 0);
     }
 
+    //Init ortho camera
     function initOrthoCamera() {
         var width = self.container.offsetWidth;
         var height = self.container.offsetHeight;
@@ -68,7 +73,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         self.cameraOrtho.position.z = 10;
     }
 
-    //RENDER ROUTINE
+    //Render routine
     function render() {
         TWEEN.update();
         self.renderer.clear();
@@ -79,7 +84,11 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         self.stats.update();
     }
 
-    //CALLED WHEN CONTAINER IS RESIZED
+    //###########################################################################################################
+    // EVENTS
+    //###########################################################################################################
+
+    //Called when container is resized
     function resize() {
         self.camera.aspect = self.container.offsetWidth/self.container.offsetHeight;
         self.camera.updateProjectionMatrix();
@@ -93,7 +102,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         self.renderer.setSize(self.container.offsetWidth, self.container.offsetHeight);
     }
 
-    //FIND OBJECT USING RAYCASTER WHEN USER CLICK ON WINDOW
+    //Find object using raycaster when user click/tap on an object
     function findObjectOnClick(event) {
         event.preventDefault();
         var vector = new THREE.Vector3( ( event.clientX / container.offsetWidth ) * 2 - 1, - ( event.clientY / container.offsetHeight ) * 2 + 1, 0.5 );
@@ -123,62 +132,32 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         }
     }
 
-    //ADD REFLECTION CUBEMAP
-    function addCubeMap(path, format) {
-        self.reflectionMap = self.TerminUtils.createCubeMapTexture(path, format);
-        self.reflectionMap.format = THREE.RGBFormat;
-    }
+    //###########################################################################################################
+    // LIGTHS & ENVIRONMENT
+    //###########################################################################################################
 
-    //ADD VARIOUS LIGHTS TO THE SCENE
+    //Add lights to the scene
     function addLights() {
         var ambientLight = new THREE.AmbientLight(0xfaebd7);
         self.scene.add(ambientLight);
     }
 
-    function addHUD() {
-        self.stats = new Stats();
-        self.container.appendChild(self.stats.domElement);
+    //Add reflection cubemap
+    function addCubeMap(path, format) {
+        self.reflectionMap = self.TerminUtils.createCubeMapTexture(path, format);
+        self.reflectionMap.format = THREE.RGBFormat;
     }
 
-    //ADD VARIOUS ASSETS TO THE SCENE
+    //###########################################################################################################
+    // ASSETS
+    //###########################################################################################################
+    
     function addAssets() {
         addCar();
         addCircuit();
     }
 
-    //ADD CIRCUIT
-    function addCircuit() {
-        var toonShader = self.customShaders['ToonShader'];
-        var uniforms_ = THREE.UniformsUtils.clone(toonShader.uniforms);
-
-        var vs = toonShader.vertexShader;
-        var fs = toonShader.fragmentShader;
-
-        var dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        dirLight.position.set(0, 10, -25);
-        self.scene.add(dirLight);
-        var helper = new THREE.DirectionalLightHelper( dirLight);
-        self.scene.add(helper);
-
-        var toonMaterial = new THREE.ShaderMaterial({
-            uniforms: uniforms_,
-            vertexShader: vs,
-            fragmentShader: fs,
-        });
-
-        //0x0555fc
-        toonMaterial.uniforms.uMaterialColor.value = new THREE.Color(0x0555fc);
-        toonMaterial.uniforms.uTone1.value = 0.76;
-        toonMaterial.uniforms.uTone2.value = 0.76;
-        toonMaterial.uniforms.uDirLightPos.value = dirLight.position;
-        toonMaterial.uniforms.uDirLightColor.value = dirLight.color;
-
-        var circuit = self.TerminUtils.loadObjModel('Circuit', 'assets/models/obj/berlin_04.obj', toonMaterial);
-        circuit.scale.set(50, 50, 50);
-        self.scene.add(circuit);
-    }
-
-    //ASSETS TO CREATE THE CAR
+    //Add assets to create the car
     function addCar() {
         //BODY
         var carGroup = new THREE.Group();
@@ -213,7 +192,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         self.scene.add(carGroup);
     }
     
-    //ADD CLICKABLE PIN TO ROTATE THE CAR
+    //Add clickable pins
     function addPins() {
         var pin1 = self.TerminUtils.createSprite('Pin1', 'assets/textures/circle_icon1.png');
         pin1.scale.set(0.3, 0.3, 0.3);
@@ -234,7 +213,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         self.scene.add(self.pinsGroup);
     }
 
-    //ADD INFO FLAGS (POWER, SPEED, ...)
+    //Add info flags
     function addInfoFlags() {
         var flagSize = new THREE.Vector3(1.5, 1.5, 1.5);
         var powerFlag = self.TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_power.png');
@@ -248,7 +227,44 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         self.scene.add(speedFlag);
     }
 
-    //ADD TWEEN.JS ANIMATIONS TO ROTATE THE CAMERA
+    //Add circuit buildings
+    function addCircuit() {
+        var toonShader = self.customShaders['ToonShader'];
+        var uniforms_ = THREE.UniformsUtils.clone(toonShader.uniforms);
+
+        var vs = toonShader.vertexShader;
+        var fs = toonShader.fragmentShader;
+
+        //We add here a light because custom toon shader needs a light
+        var dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(0, 10, -25);
+        self.scene.add(dirLight);
+        var helper = new THREE.DirectionalLightHelper( dirLight);
+        self.scene.add(helper);
+
+        var toonMaterial = new THREE.ShaderMaterial({
+            uniforms: uniforms_,
+            vertexShader: vs,
+            fragmentShader: fs,
+        });
+
+        //0x0555fc
+        toonMaterial.uniforms.uMaterialColor.value = new THREE.Color(0x0555fc);
+        toonMaterial.uniforms.uTone1.value = 0.76;
+        toonMaterial.uniforms.uTone2.value = 0.76;
+        toonMaterial.uniforms.uDirLightPos.value = dirLight.position;
+        toonMaterial.uniforms.uDirLightColor.value = dirLight.color;
+
+        var circuit = self.TerminUtils.loadObjModel('Circuit', 'assets/models/obj/berlin_04.obj', toonMaterial);
+        circuit.scale.set(50, 50, 50);
+        self.scene.add(circuit);
+    }
+
+    //###########################################################################################################
+    // ANIMATIONS
+    //###########################################################################################################
+
+    //Create and start a new animation passing a new position
     function createAnimation(new_position) {
         self.cameraAnimation = new TWEEN.Tween(self.camera.position)
             .to({x: new_position.x, y: new_position.y, z: new_position.z}, 2000)
@@ -263,7 +279,17 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         self.cameraAnimation.start();
     }
 
-    //ADD ORTHO ASSETS
+    //Create and start a new animation taking an array as argument
+    function startCameraAnimation(new_position) {
+        var newPos = new THREE.Vector3(new_position[0], new_position[1], new_position[2]);
+        createAnimation(newPos);
+    }
+
+    //###########################################################################################################
+    // ORTHOGRAPHIC LAYER
+    //###########################################################################################################
+
+    //Add ortho assets to the scene
     function addOrthoAssets() {
         var width = self.container.offsetWidth;
         var height = self.container.offsetHeight;
@@ -281,6 +307,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         self.sceneOrtho.add(orthoGlarePlane);
     }
 
+    //Update ortho assets size when container is resized
     function updateOrthoAssetsSize() {
         var width = self.container.offsetWidth;
         var height = self.container.offsetHeight;
@@ -293,14 +320,24 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         }
     }
 
-    //RUN CAMERA ANIMATION[INDEX]
-    function startCameraAnimation(new_position) {
-        var newPos = new THREE.Vector3(new_position[0], new_position[1], new_position[2]);
-        createAnimation(newPos);
+    //###########################################################################################################
+    // HUD & UI
+    //###########################################################################################################
+
+    //Add UI elements
+    function addHUD() {
+        self.stats = new Stats();
+        self.container.appendChild(self.stats.domElement);
+    }    
+    
+
+    function getCameraPosition() {
+        console.log(self.camera.position);
     }
 
     this.render = render;
     this.resize = resize;
     this.findObjectOnClick = findObjectOnClick;
     this.startCameraAnimation = startCameraAnimation;
+    this.getCameraPosition = getCameraPosition;
 }
