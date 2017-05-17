@@ -18,6 +18,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     self.glarePlaneSize = 312;
     self.customShaders = CustomShaders;
     self.dirLight = null;
+    self.cameraAnimation = null;
 
     init(container)
     
@@ -49,7 +50,6 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         addOrthoAssets();
         addInfoFlags();
         addHUD();
-        addCameraAnimations();
     }
 
     //INIT CAMERA WITH ORBIT CONTROLS
@@ -105,8 +105,19 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         if (intersected.length > 0) {
             for (var i=0; i<self.pinsGroup.children.length; i++) {
                 if (intersected[0].object.name === self.pinsGroup.children[i].name) {
-                    console.log("FOUND", self.pinsGroup.children[i].name);
-                    startCameraAnimation(i);
+                    switch (i) {
+                        case 0:
+                            createAnimation(new THREE.Vector3(2, 1, 4));
+                        break;
+
+                        case 1:
+                            createAnimation(new THREE.Vector3(3, 3, 0.8));
+                        break;
+
+                        case 2:
+                            createAnimation(new THREE.Vector3(2, 3, -3));
+                        break;
+                    }
                     break;
                 }
             }
@@ -239,9 +250,9 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     }
 
     //ADD TWEEN.JS ANIMATIONS TO ROTATE THE CAMERA
-    function addCameraAnimations() {
-        tween1 = new TWEEN.Tween(self.camera.position)
-            .to({x: 2, y: 1, z: 4}, 2000)
+    function createAnimation(new_position) {
+        self.cameraAnimation = new TWEEN.Tween(self.camera.position)
+            .to({x: new_position.x, y: new_position.y, z: new_position.z}, 2000)
             .easing(TWEEN.Easing.Sinusoidal.InOut)
             .onUpdate(function () {
                 self.camera.position.set(this.x, this.y, this.z);
@@ -249,31 +260,8 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
             })
         .onComplete(function() {
         });
-        self.cameraAnimations.push(tween1);
 
-        tween2 = new TWEEN.Tween(self.camera.position)
-            .to({x: 3, y: 3, z: 0.8}, 2000)
-            .easing(TWEEN.Easing.Sinusoidal.InOut)
-            .onUpdate(function () {
-                self.camera.position.set(this.x, this.y, this.z);
-                self.orbit_controls.update();
-            })
-            .onComplete(function() {
-                
-            });
-        self.cameraAnimations.push(tween2);
-        
-        tween3 = new TWEEN.Tween(self.camera.position)
-            .to({x: 2, y: 3, z: -3}, 2000)
-            .easing(TWEEN.Easing.Sinusoidal.InOut)
-            .onUpdate(function () {
-                self.camera.position.set(this.x, this.y, this.z);
-                self.orbit_controls.update();
-            })
-            .onComplete(function() {
-                
-            });
-        self.cameraAnimations.push(tween3);
+        self.cameraAnimation.start();
     }
 
     //ADD ORTHO ASSETS
@@ -307,12 +295,13 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     }
 
     //RUN CAMERA ANIMATION[INDEX]
-    function startCameraAnimation(index) {
-        self.cameraAnimations[index].start();
+    function startCameraAnimation(new_position) {
+        var newPos = new THREE.Vector3(new_position[0], new_position[1], new_position[2]);
+        createAnimation(newPos);
     }
-
 
     this.render = render;
     this.resize = resize;
     this.findObjectOnClick = findObjectOnClick;
+    this.startCameraAnimation = startCameraAnimation;
 }
