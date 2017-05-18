@@ -18,6 +18,8 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     self.customShaders = CustomShaders;
     self.dirLight = null;
     self.cameraAnimation = null;
+    self.worldAnimation = null;
+    self.world = null;
 
     init(container)
     
@@ -155,6 +157,8 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     function addAssets() {
         addCar();
         addCircuit();
+
+        addWorld();
     }
 
     //Add assets to create the car
@@ -257,7 +261,20 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
 
         var circuit = self.TerminUtils.loadObjModel('Circuit', 'assets/models/obj/berlin_04.obj', toonMaterial);
         circuit.scale.set(50, 50, 50);
+        circuit.rotation.set(0, radians(180), 0);
         self.scene.add(circuit);
+    }
+
+    function addWorld() {
+        var worldTexture = self.TerminUtils.createTexture('assets/textures/world_white.png');
+        var worldMaterial = new THREE.MeshBasicMaterial({map: worldTexture});
+        worldMaterial.transparent = true;
+        worldMaterial.opacity = 1;
+        self.world = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 20, 20), worldMaterial);
+        self.world.scale.set(3000, 3000, 3000);
+        self.world.position.set(0, -3000, 0);
+        self.world.rotation.set(0, radians(-90), radians(-90));
+        self.scene.add(self.world);
     }
 
     //###########################################################################################################
@@ -283,6 +300,36 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     function startCameraAnimation(new_position) {
         var newPos = new THREE.Vector3(new_position[0], new_position[1], new_position[2]);
         createAnimation(newPos);
+    }
+
+    function startCameraWorldAnimation(new_camera_position, new_world_position, world_anim_duration) {
+        var counter = 0;
+        var new_camera_pos = new THREE.Vector3(new_camera_position[0], new_camera_position[1], new_camera_position[2]);
+        var new_world_pos = new THREE.Vector3(new_world_position[0], new_world_position[1], new_world_position[2]);
+        
+        var worlPosdAnimation = new TWEEN.Tween(self.world.position)
+            .to({x: new_world_pos.x, y: new_world_pos.y, z: new_world_pos.z}, world_anim_duration)
+            .easing(TWEEN.Easing.Sinusoidal.InOut)
+            .onUpdate(function () {
+                self.world.position.set(this.x, this.y, this.z);
+            })
+        .onComplete(function() {
+        });
+
+        self.cameraAnimation = new TWEEN.Tween(self.camera.position)
+            .to({x: new_camera_pos.x, y: new_camera_pos.y, z: new_camera_pos.z}, 2000)
+            .easing(TWEEN.Easing.Sinusoidal.InOut)
+            .onUpdate(function () {
+                counter++;
+                if (counter === 20) {
+                    worlPosdAnimation.start();
+                }
+                self.camera.position.set(this.x, this.y, this.z);
+                self.orbit_controls.update();
+            })
+        .onComplete(function() {
+        });
+        self.cameraAnimation.start();
     }
 
     //###########################################################################################################
@@ -330,6 +377,9 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         self.container.appendChild(self.stats.domElement);
     }    
     
+    function radians(degrees) {
+        return degrees * Math.PI / 180;
+    }
 
     function getCameraPosition() {
         console.log(self.camera.position);
@@ -340,4 +390,5 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     this.findObjectOnClick = findObjectOnClick;
     this.startCameraAnimation = startCameraAnimation;
     this.getCameraPosition = getCameraPosition;
+    this.startCameraWorldAnimation = startCameraWorldAnimation;
 }
