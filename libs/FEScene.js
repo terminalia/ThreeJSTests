@@ -272,7 +272,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         worldMaterial.transparent = true;
         worldMaterial.opacity = 1;
         //self.world = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 20, 20), worldMaterial);
-        self.world = self.TerminUtils.loadObjModel('World', 'assets/models/obj/World2.obj', worldMaterial);
+        self.world = self.TerminUtils.loadObjModel('World', 'assets/models/obj/World.obj', worldMaterial);
         self.world.scale.set(3000, 3000, 3000);
         self.world.position.set(0, -3000, 0);
         self.world.rotation.set(0, 0, radians(90))
