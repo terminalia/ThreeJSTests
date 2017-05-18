@@ -61,6 +61,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     function initOrbitCamera() {
         self.camera = new THREE.PerspectiveCamera( 60, self.container.offsetWidth/self.container.offsetHeight, 0.1, 10000 );
         self.camera.position.set(2, 1, 3);
+        self.camera.updateProjectionMatrix();
         self.orbit_controls = new THREE.OrbitControls(self.camera, self.renderer.domElement);
         self.orbit_controls.maxPolarAngle = Math.PI/2 - 0.1;
         self.orbit_controls.enableZoom = true;
@@ -270,10 +271,11 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         var worldMaterial = new THREE.MeshBasicMaterial({map: worldTexture});
         worldMaterial.transparent = true;
         worldMaterial.opacity = 1;
-        self.world = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 20, 20), worldMaterial);
+        //self.world = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 20, 20), worldMaterial);
+        self.world = self.TerminUtils.loadObjModel('World', 'assets/models/obj/World2.obj', worldMaterial);
         self.world.scale.set(3000, 3000, 3000);
         self.world.position.set(0, -3000, 0);
-        self.world.rotation.set(0, radians(-90), radians(-90));
+        self.world.rotation.set(0, 0, radians(90))
         self.scene.add(self.world);
     }
 
@@ -302,19 +304,35 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         createAnimation(newPos);
     }
 
-    function startCameraWorldAnimation(new_camera_position, new_world_position, world_anim_duration) {
+    function startCameraWorldAnimation(new_camera_position, new_world_position, new_world_rotation, world_anim_duration) {
         var counter = 0;
         var new_camera_pos = new THREE.Vector3(new_camera_position[0], new_camera_position[1], new_camera_position[2]);
         var new_world_pos = new THREE.Vector3(new_world_position[0], new_world_position[1], new_world_position[2]);
         
-        var worlPosdAnimation = new TWEEN.Tween(self.world.position)
-            .to({x: new_world_pos.x, y: new_world_pos.y, z: new_world_pos.z}, world_anim_duration)
+        var worldRotAnimation = new TWEEN.Tween(self.world.rotation)
+            .to({x: 0, y: 0, z: radians(new_world_rotation[2])}
+            , world_anim_duration)
+            .easing(TWEEN.Easing.Sinusoidal.InOut)
+            .onUpdate(function(){
+                
+            })
+            .onComplete(function(){
+                
+            });
+
+        var worlPosAnimation = new TWEEN.Tween(self.world.position)
+            .to({
+                x: new_world_pos.x, 
+                y: new_world_pos.y, 
+                z: new_world_pos.z
+                }, world_anim_duration)
             .easing(TWEEN.Easing.Sinusoidal.InOut)
             .onUpdate(function () {
                 self.world.position.set(this.x, this.y, this.z);
             })
-        .onComplete(function() {
-        });
+            .onComplete(function() {
+                
+            });
 
         self.cameraAnimation = new TWEEN.Tween(self.camera.position)
             .to({x: new_camera_pos.x, y: new_camera_pos.y, z: new_camera_pos.z}, 2000)
@@ -322,7 +340,8 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
             .onUpdate(function () {
                 counter++;
                 if (counter === 20) {
-                    worlPosdAnimation.start();
+                    worldRotAnimation.start();
+                    worlPosAnimation.start();
                 }
                 self.camera.position.set(this.x, this.y, this.z);
                 self.orbit_controls.update();
@@ -375,6 +394,10 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     function addHUD() {
         self.stats = new Stats();
         self.container.appendChild(self.stats.domElement);
+    }
+
+    function rotateWorld(angle) {
+        self.world.rotateY(radians(angle));
     }    
     
     function radians(degrees) {
@@ -391,4 +414,5 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     this.startCameraAnimation = startCameraAnimation;
     this.getCameraPosition = getCameraPosition;
     this.startCameraWorldAnimation = startCameraWorldAnimation;
+    this.rotateWorld = rotateWorld;
 }
