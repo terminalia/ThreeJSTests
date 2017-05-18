@@ -59,7 +59,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
 
     //Init borbit camera
     function initOrbitCamera() {
-        self.camera = new THREE.PerspectiveCamera( 60, self.container.offsetWidth/self.container.offsetHeight, 0.1, 10000 );
+        self.camera = new THREE.PerspectiveCamera( 60, self.container.offsetWidth/self.container.offsetHeight, 0.1, 6000 );
         self.camera.position.set(2, 1, 3);
         self.camera.updateProjectionMatrix();
         self.orbit_controls = new THREE.OrbitControls(self.camera, self.renderer.domElement);
@@ -270,11 +270,11 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         var worldTexture = self.TerminUtils.createTexture('assets/textures/world_white.png');
         var worldMaterial = new THREE.MeshBasicMaterial({map: worldTexture});
         worldMaterial.transparent = true;
-        worldMaterial.opacity = 1;
+        worldMaterial.opacity = 0;
         //self.world = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 20, 20), worldMaterial);
         self.world = self.TerminUtils.loadObjModel('World', 'assets/models/obj/World.obj', worldMaterial);
         self.world.scale.set(3000, 3000, 3000);
-        self.world.position.set(0, -3000, 0);
+        self.world.position.set(0, -10001, 0);
         self.world.rotation.set(0, 0, radians(90))
         self.scene.add(self.world);
     }
@@ -304,20 +304,20 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         createAnimation(newPos);
     }
 
-    function startCameraWorldAnimation(new_camera_position, new_world_position, new_world_rotation, world_anim_duration) {
+    function startCameraWorldAnimation(index, new_camera_position, new_world_position, new_world_rotation, world_anim_duration) {
         var counter = 0;
         var new_camera_pos = new THREE.Vector3(new_camera_position[0], new_camera_position[1], new_camera_position[2]);
         var new_world_pos = new THREE.Vector3(new_world_position[0], new_world_position[1], new_world_position[2]);
-        
+        var new_world_rot = new THREE.Vector3(new_world_rotation[0], new_world_rotation[1], new_world_rotation[2]);
+
+        self.world.children[0].children[0].material.opacity = 1;
         var worldRotAnimation = new TWEEN.Tween(self.world.rotation)
-            .to({x: 0, y: 0, z: radians(new_world_rotation[2])}
+            .to({x: radians(new_world_rot.x), y: radians(new_world_rot.y), z: radians(new_world_rot.z)}
             , world_anim_duration)
             .easing(TWEEN.Easing.Sinusoidal.InOut)
             .onUpdate(function(){
-                
             })
             .onComplete(function(){
-                
             });
 
         var worlPosAnimation = new TWEEN.Tween(self.world.position)
@@ -340,13 +340,16 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
             .onUpdate(function () {
                 counter++;
                 if (counter === 20) {
-                    worldRotAnimation.start();
+                    if (index !== 2)
+                        worldRotAnimation.start();
                     worlPosAnimation.start();
                 }
                 self.camera.position.set(this.x, this.y, this.z);
                 self.orbit_controls.update();
             })
         .onComplete(function() {
+            if (index === 2)
+                    worldRotAnimation.start();
         });
         self.cameraAnimation.start();
     }
