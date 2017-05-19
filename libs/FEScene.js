@@ -20,6 +20,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     self.cameraAnimation = null;
     self.worldAnimation = null;
     self.world = null;
+    self.circuitPivot = null;
 
     init(container)
     
@@ -59,7 +60,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
 
     //Init borbit camera
     function initOrbitCamera() {
-        self.camera = new THREE.PerspectiveCamera( 60, self.container.offsetWidth/self.container.offsetHeight, 0.1, 6000 );
+        self.camera = new THREE.PerspectiveCamera( 60, self.container.offsetWidth/self.container.offsetHeight, 0.1, 20000 );
         self.camera.position.set(2, 1, 3);
         self.camera.updateProjectionMatrix();
         self.orbit_controls = new THREE.OrbitControls(self.camera, self.renderer.domElement);
@@ -156,10 +157,10 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     //###########################################################################################################
     
     function addAssets() {
-        addCar();
-        addCircuit();
+        //addCar();
+        addCircuit(199, 0);
 
-        addWorld();
+        addWorld(200);
     }
 
     //Add assets to create the car
@@ -233,7 +234,10 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     }
 
     //Add circuit buildings
-    function addCircuit() {
+    function addCircuit(size, offset) {
+        if (offset === 0) 
+                offset = 1;
+
         var toonShader = self.customShaders['ToonShader'];
         var uniforms_ = THREE.UniformsUtils.clone(toonShader.uniforms);
 
@@ -260,22 +264,30 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         toonMaterial.uniforms.uDirLightPos.value = dirLight.position;
         toonMaterial.uniforms.uDirLightColor.value = dirLight.color;
 
-        var circuit = self.TerminUtils.loadObjModel('Circuit', 'assets/models/obj/berlin_04.obj', toonMaterial);
-        circuit.scale.set(50, 50, 50);
-        circuit.rotation.set(0, radians(180), 0);
-        self.scene.add(circuit);
+        var circuitPivotMat = new THREE.MeshBasicMaterial();
+        circuitPivotMat.transparent = true;
+        circuitPivotMat.opacity = 0.0;
+        self.circuitPivot = new THREE.Mesh(new THREE.SphereBufferGeometry(size, 20, 20), circuitPivotMat);
+        
+
+        var circuit = self.TerminUtils.loadObjModel('Circuit', 'assets/models/obj/circuit.obj', toonMaterial);
+        circuit.position.set(0, size * offset, 0);
+
+        self.circuitPivot.add(circuit);
+        self.circuitPivot.position.set(0, -size, 0);
+        self.scene.add(self.circuitPivot);
     }
 
-    function addWorld() {
+    function addWorld(size) {
         var worldTexture = self.TerminUtils.createTexture('assets/textures/world_white.png');
         var worldMaterial = new THREE.MeshBasicMaterial({map: worldTexture});
         worldMaterial.transparent = true;
-        worldMaterial.opacity = 0;
+        worldMaterial.opacity = 1;
         //self.world = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 20, 20), worldMaterial);
         self.world = self.TerminUtils.loadObjModel('World', 'assets/models/obj/World.obj', worldMaterial);
-        self.world.scale.set(3000, 3000, 3000);
-        self.world.position.set(0, -10001, 0);
-        self.world.rotation.set(0, 0, radians(90))
+        self.world.scale.set(size, size, size);
+        self.world.position.set(0, -size, 0);
+        //self.world.rotation.set(0, 0, radians(90))
         self.scene.add(self.world);
     }
 
