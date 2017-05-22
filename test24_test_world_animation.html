@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>ThreeJS VideoTexture Test 1</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			margin: 0px;
+			background-color: #000000;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+
+	<script src="bower_components/three.js/build/three.js"></script>
+    <script src="bower_components/three.js/examples/js/loaders/RGBELoader.js"></script>
+	<script src="bower_components/three.js/examples/js/loaders/HDRCubeTextureLoader.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+    <script src="bower_components/three.js/examples/js/libs/tween.min.js"></script>
+    <script src="bower_components/gsap/src/minified/TweenMax.min.js"></script>
+    <script src="bower_components/gsap/src/minified/TimelineMax.min.js"></script>
+	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+    <script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
+    <script src="libs/TerminUtils.js"></script>
+
+	<script>
+
+		var camera, camera_control, scene, renderer, stats
+		var TerminUtils = new TERMINALIA.TerminUtils();
+        var tweenTimeLine;
+
+		init();
+		animate();
+
+		function init() {
+			//###################################################
+			// INITIAL SETUP
+			//###################################################
+			renderer = new THREE.WebGLRenderer({antialias: true});
+			renderer.setPixelRatio( window.devicePixelRatio );
+			//renderer.setClearColor(new THREE.Color('rgb(98, 166, 189)', 1))
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+
+			textureLoader = new THREE.TextureLoader();
+
+			//###################################################
+			// SCENE SETUP
+			//###################################################
+			scene = new THREE.Scene();
+
+			//Setup the camera
+			camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.z = 2.5;
+
+			//Add controls to the camera
+			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
+			
+			var ambientLight = new THREE.AmbientLight(0xfaebd7);
+            scene.add(ambientLight);
+	
+			//###################################################
+			// ASSETS LOADING
+			//###################################################
+            var worldTexture = TerminUtils.createTexture('assets/textures/world_white2.png');
+            worldTexture.magFilter = THREE.LinearFilter;
+            worldTexture.minFilter = THREE.LinearFilter;
+            var worldMaterial = new THREE.MeshBasicMaterial({map: worldTexture});
+            var world = TerminUtils.loadObjModel('World','assets/models/obj/World.obj', worldMaterial);
+            world.scale.set(1, 1, 1);
+            world.position.set(0, -1.9, 0);
+            scene.add(world);
+            
+            tweenTimeLine = new TimelineMax({repeat: 0, paused:true});
+            //tweenTimeLine.add(TweenLite.to(world.rotation, 1, {x: radians(-32.322), y: 0, z: radians(16.161), delay: 3}), 'rotation');
+            tweenTimeLine.add(TweenLite.to(world.position, 2, {x: -1.21958, y: 0.68516, z: 0, delay:0.5, ease:Power1.easeInOut}));
+            tweenTimeLine.add(TweenLite.to(world.rotation, 2.5, {x: radians(-180), y: 0, z: radians(93.3), delay:0}),0);
+            //tweenTimeLine.play();
+            tweenTimeLine.play()
+            
+            
+            
+            
+
+
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			stats = new Stats();
+			document.body.appendChild( stats.domElement );
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.left	= '0px';
+			stats.domElement.style.bottom	= '0px';
+			stats.update();
+
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+			window.addEventListener( 'resize', onWindowResize, false );
+		}
+
+        function createRotateAnimation(object, rot_x, rot_y, rot_z, delay, duration) {
+            return new TWEEN.Tween(object.rotation)
+            .to({
+                loop: true,
+                x: radians(rot_x),
+                y: radians(rot_y),
+                z: radians(rot_z)
+            }, duration)
+            .delay(delay)
+            .easing(TWEEN.Easing.Sinusoidal.InOut);
+        }
+
+        function createTranslateAnimation(object, pos_x, pos_y, pos_z, delay, duration) {
+            return new TWEEN.Tween(object.position)
+            .to({
+                x: pos_x,
+                y: pos_y,
+                z: pos_z
+            }, duration)
+            .delay(delay)
+            .easing(TWEEN.Easing.Sinusoidal.InOut);
+        }
+
+		function onWindowResize() {
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+		}
+
+        function radians(degrees) {
+            return degrees * Math.PI / 180;
+        }
+
+		function animate() {
+            TWEEN.update();
+			renderer.render( scene, camera );
+			camera_control.update();
+			requestAnimationFrame( animate );
+			stats.update();
+		}
+
+</script>
+</body>
+</html>

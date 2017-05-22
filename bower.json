@@ -21,6 +21,7 @@
   ],
   "dependencies": {
     "three.js": "threejs#*",
-    "d3": "~3"
+    "d3": "~3",
+    "gsap": "^1.19.1"
   }
 }
