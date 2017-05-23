@@ -24,8 +24,9 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     self.stage1Animation = new TimelineMax({repeat: 0, paused:true});
     self.stage2Animation = new TimelineMax({repeat: 0, paused:true});
     self.stage3Animation = new TimelineMax({repeat: 0, paused:true});
+    self.stageAnimation = new TimelineMax({repeat: 0, paused: true});
     self.worldSize = 6000;
-    self.currentState = 0;
+    self.currentState = 'StageStart';
 
     init(container)
     
@@ -57,6 +58,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         addOrthoAssets();
         addInfoFlags();
         addHUD();
+        
     }
 
     //###########################################################################################################
@@ -289,11 +291,9 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         var worldMaterial = new THREE.MeshBasicMaterial({map: worldTexture});
         worldMaterial.transparent = true;
         worldMaterial.opacity = 0;
-        //self.world = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 20, 20), worldMaterial);
         self.world = self.TerminUtils.loadObjModel('World', 'assets/models/obj/World.obj', worldMaterial);
         self.world.scale.set(size, size, size);
-        self.world.position.set(0, -size * 2, 0);
-        //self.world.rotation.set(0, 0, radians(90))
+        self.world.position.set(0, -size -1000, 0);
         self.scene.add(self.world);
     }
 
@@ -322,23 +322,33 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         createAnimation(newPos, duration);
     }
 
-    function startCameraWorldAnimation(stage, backward) {
+    function startCameraWorldAnimation(stage) {
         switch(stage)
         {
             case 1:
-            playStage1Animation();
+            self.stageAnimation.tweenFromTo(self.currentState, 'StageStart')
+            self.currentState = 'StageStart'
             break;
 
             case 2:
-            playStage2Animation(backward);
+            self.stageAnimation.tweenFromTo(self.currentState, 'StageCircuit')
+            self.currentState = 'StageCircuit'
             break;
 
             case 3:
-            playStage3Animation(backward);
+            self.stageAnimation.tweenFromTo(self.currentState, 'StageFinal')
+            self.currentState = 'StageFinal'
             break;
         }
     }
 
+    function playStageAnimation(stage, backward) {
+        if (backward) {
+            self.stageAnimation.reverse(stage);
+        } else {
+            self.stageAnimation.tweenFromTo("StageFinal", "Stage1");
+        }
+    }
     function playStage1Animation() {
         var newCameraPos = new THREE.Vector3(2, 1, 3);
         //var stage1Animation = new TimelineMax({repeat: 0, paused:true});
@@ -390,6 +400,39 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         else {
             self.stage3Animation.play(0, 3);
         }
+    }
+
+    function createStageAnimation() {
+        //STAGE 1 is the ORIGIN
+        
+        //STAGE 2
+        newCameraPos = new THREE.Vector3(156, 320, 521);
+        self.stageAnimation.addLabel("StageStart");
+        self.stageAnimation.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut, onUpdate: function() {
+            self.orbit_controls.update()
+        }}), "StageStart");
+        
+
+        //STAGE 3
+        newCameraPos = new THREE.Vector3(2650, 1476, 8081);
+        self.stageAnimation.addLabel("StageCircuit");
+        //1. Make world visible by changing its opacity
+        self.stageAnimation.add(TweenLite.to(self.world.children[0].children[0].material, 1, {opacity: 1}));
+        //2. Move world under the circuit
+        self.stageAnimation.add(TweenLite.to(self.world.position, 1, {x: 0, y: -6000, z: 0, delay: 0, ease: Power1.easeInOut}), 'StageCircuit');
+        //3. Rotate circuit behind the world
+        self.stageAnimation.add(TweenLite.to(self.circuitPivot.rotation, 1, {x: radians(-30), y: 0, z: 0, delay: 1, ease: Power1.easeInOut}), 'StageCircuit');
+        //4. Rotate world
+        self.stageAnimation.add(TweenLite.to(self.world.rotation, 2, {x: radians(-180), y: 0, z: radians(93.3), delay: 1}), 'StageCircuit');
+        //5. Move World
+        self.stageAnimation.add(TweenLite.to(self.world.position, 2, {x: -4000, y: -2000, z: 0, delay: 1, ease: Power1.easeInOut}), 'StageCircuit');
+
+        self.stageAnimation.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut, onUpdate: function() {
+            self.orbit_controls.update()
+        }}), 'StageCircuit');
+        self.stageAnimation.addLabel("StageFinal");
+
+        console.log("Animations created!");
     }
 
     //###########################################################################################################
@@ -456,5 +499,6 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     this.startCameraAnimation = startCameraAnimation;
     this.startCameraWorldAnimation = startCameraWorldAnimation;
     this.getCameraPosition = getCameraPosition;
+    this.createStageAnimation = createStageAnimation;
     this.rotateWorld = rotateWorld;
 }
