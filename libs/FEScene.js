@@ -21,6 +21,9 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     self.worldAnimation = null;
     self.world = null;
     self.circuitPivot = null;
+    self.timeLineCircuit = new TimelineMax({repeat: 0, paused:true});
+    self.timeLineWorld = new TimelineMax({repeat: 0, paused:true});
+    self.worldSize = 6000;
 
     init(container)
     
@@ -60,7 +63,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
 
     //Init borbit camera
     function initOrbitCamera() {
-        self.camera = new THREE.PerspectiveCamera( 60, self.container.offsetWidth/self.container.offsetHeight, 0.1, 20000 );
+        self.camera = new THREE.PerspectiveCamera( 60, self.container.offsetWidth/self.container.offsetHeight, 0.1, 50000 );
         self.camera.position.set(2, 1, 3);
         self.camera.updateProjectionMatrix();
         self.orbit_controls = new THREE.OrbitControls(self.camera, self.renderer.domElement);
@@ -157,10 +160,9 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     //###########################################################################################################
     
     function addAssets() {
-        //addCar();
-        addCircuit(199, 0);
-
-        addWorld(200);
+        addCar();
+        addCircuit(5999, 0);
+        addWorld(self.worldSize);
     }
 
     //Add assets to create the car
@@ -266,11 +268,13 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
 
         var circuitPivotMat = new THREE.MeshBasicMaterial();
         circuitPivotMat.transparent = true;
-        circuitPivotMat.opacity = 0.0;
+        circuitPivotMat.opacity = 0;
         self.circuitPivot = new THREE.Mesh(new THREE.SphereBufferGeometry(size, 20, 20), circuitPivotMat);
-        
+        self.circuitPivot.material.visible = false;
+        console.log(self.circuitPivot);
 
         var circuit = self.TerminUtils.loadObjModel('Circuit', 'assets/models/obj/circuit.obj', toonMaterial);
+        circuit.scale.set(40, 40, 40);
         circuit.position.set(0, size * offset, 0);
 
         self.circuitPivot.add(circuit);
@@ -279,14 +283,14 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     }
 
     function addWorld(size) {
-        var worldTexture = self.TerminUtils.createTexture('assets/textures/world_white.png');
+        var worldTexture = self.TerminUtils.createTexture('assets/textures/world_white2.png');
         var worldMaterial = new THREE.MeshBasicMaterial({map: worldTexture});
         worldMaterial.transparent = true;
-        worldMaterial.opacity = 1;
+        worldMaterial.opacity = 0;
         //self.world = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 20, 20), worldMaterial);
         self.world = self.TerminUtils.loadObjModel('World', 'assets/models/obj/World.obj', worldMaterial);
         self.world.scale.set(size, size, size);
-        self.world.position.set(0, -size, 0);
+        self.world.position.set(0, -size * 2, 0);
         //self.world.rotation.set(0, 0, radians(90))
         self.scene.add(self.world);
     }
@@ -296,9 +300,9 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     //###########################################################################################################
 
     //Create and start a new animation passing a new position
-    function createAnimation(new_position) {
+    function createAnimation(new_position, duration) {
         self.cameraAnimation = new TWEEN.Tween(self.camera.position)
-            .to({x: new_position.x, y: new_position.y, z: new_position.z}, 2000)
+            .to({x: new_position.x, y: new_position.y, z: new_position.z}, duration)
             .easing(TWEEN.Easing.Sinusoidal.InOut)
             .onUpdate(function () {
                 self.camera.position.set(this.x, this.y, this.z);
@@ -311,59 +315,34 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     }
 
     //Create and start a new animation taking an array as argument
-    function startCameraAnimation(new_position) {
+    function startCameraAnimation(new_position, duration) {
         var newPos = new THREE.Vector3(new_position[0], new_position[1], new_position[2]);
-        createAnimation(newPos);
+        createAnimation(newPos, duration);
     }
 
-    function startCameraWorldAnimation(index, new_camera_position, new_world_position, new_world_rotation, world_anim_duration) {
-        var counter = 0;
-        var new_camera_pos = new THREE.Vector3(new_camera_position[0], new_camera_position[1], new_camera_position[2]);
-        var new_world_pos = new THREE.Vector3(new_world_position[0], new_world_position[1], new_world_position[2]);
-        var new_world_rot = new THREE.Vector3(new_world_rotation[0], new_world_rotation[1], new_world_rotation[2]);
+    function startCameraWorldAnimation() {
+        var newCameraPos = new THREE.Vector3(2184, 2725, 8401);
+        /*
+        self.timeLineCircuit.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut}));
+        self.timeLineCircuit.add(TweenLite.to(self.circuitPivot.rotation, 2, {x: radians(-30), y: 0, z: 0, delay: 0, ease: Power1.easeInOut}), 0);
+        self.timeLineCircuit.play();
+        */
+        console.log(self.world.children[0].children[0]);
+        
+        //1. Make world visible by changing its opacity
+        self.timeLineCircuit.add(TweenLite.to(self.world.children[0].children[0].material, 1, {opacity: 1}));
+        //2. Move world under the circuit
+        self.timeLineCircuit.add(TweenLite.to(self.world.position, 1, {x: 0, y: -6000, z: 0, delay: 0, ease: Power1.easeInOut}), 0);
+        //3. Rotate circuit behind the world
+        self.timeLineCircuit.add(TweenLite.to(self.circuitPivot.rotation, 1, {x: radians(-30), y: 0, z: 0, delay: 1, ease: Power1.easeInOut}), 0);
+        //4. Rotate world
+        self.timeLineCircuit.add(TweenLite.to(self.world.rotation, 2, {x: radians(-180), y: 0, z: radians(93.3), delay: 1}), 0);
+        //5. Move World
+        self.timeLineCircuit.add(TweenLite.to(self.world.position, 2, {x: -4000, y: -3000, z: 0, delay: 1, ease: Power1.easeInOut}), 0);
 
-        self.world.children[0].children[0].material.opacity = 1;
-        var worldRotAnimation = new TWEEN.Tween(self.world.rotation)
-            .to({x: radians(new_world_rot.x), y: radians(new_world_rot.y), z: radians(new_world_rot.z)}
-            , world_anim_duration)
-            .easing(TWEEN.Easing.Sinusoidal.InOut)
-            .onUpdate(function(){
-            })
-            .onComplete(function(){
-            });
 
-        var worlPosAnimation = new TWEEN.Tween(self.world.position)
-            .to({
-                x: new_world_pos.x, 
-                y: new_world_pos.y, 
-                z: new_world_pos.z
-                }, world_anim_duration)
-            .easing(TWEEN.Easing.Sinusoidal.InOut)
-            .onUpdate(function () {
-                self.world.position.set(this.x, this.y, this.z);
-            })
-            .onComplete(function() {
-                
-            });
-
-        self.cameraAnimation = new TWEEN.Tween(self.camera.position)
-            .to({x: new_camera_pos.x, y: new_camera_pos.y, z: new_camera_pos.z}, 2000)
-            .easing(TWEEN.Easing.Sinusoidal.InOut)
-            .onUpdate(function () {
-                counter++;
-                if (counter === 20) {
-                    if (index !== 2)
-                        worldRotAnimation.start();
-                    worlPosAnimation.start();
-                }
-                self.camera.position.set(this.x, this.y, this.z);
-                self.orbit_controls.update();
-            })
-        .onComplete(function() {
-            if (index === 2)
-                    worldRotAnimation.start();
-        });
-        self.cameraAnimation.start();
+        self.timeLineCircuit.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut}), 0);
+        self.timeLineCircuit.play();
     }
 
     //###########################################################################################################
@@ -412,7 +391,8 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     }
 
     function rotateWorld(angle) {
-        self.world.rotateY(radians(angle));
+        self.world.rotateX(radians(angle));
+        self.circuitPivot.rotateX(radians(angle));
     }    
     
     function radians(degrees) {
@@ -427,7 +407,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     this.resize = resize;
     this.findObjectOnClick = findObjectOnClick;
     this.startCameraAnimation = startCameraAnimation;
-    this.getCameraPosition = getCameraPosition;
     this.startCameraWorldAnimation = startCameraWorldAnimation;
+    this.getCameraPosition = getCameraPosition;
     this.rotateWorld = rotateWorld;
 }
