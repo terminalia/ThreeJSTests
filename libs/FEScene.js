@@ -21,9 +21,11 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     self.worldAnimation = null;
     self.world = null;
     self.circuitPivot = null;
-    self.timeLineCircuit = new TimelineMax({repeat: 0, paused:true});
-    self.timeLineWorld = new TimelineMax({repeat: 0, paused:true});
+    self.stage1Animation = new TimelineMax({repeat: 0, paused:true});
+    self.stage2Animation = new TimelineMax({repeat: 0, paused:true});
+    self.stage3Animation = new TimelineMax({repeat: 0, paused:true});
     self.worldSize = 6000;
+    self.currentState = 0;
 
     init(container)
     
@@ -122,15 +124,15 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
                 if (intersected[0].object.name === self.pinsGroup.children[i].name) {
                     switch (i) {
                         case 0:
-                            createAnimation(new THREE.Vector3(2, 1, 4));
+                            createAnimation(new THREE.Vector3(2, 1, 4), 2000);
                         break;
 
                         case 1:
-                            createAnimation(new THREE.Vector3(3, 3, 0.8));
+                            createAnimation(new THREE.Vector3(3, 3, 0.8), 2000);
                         break;
 
                         case 2:
-                            createAnimation(new THREE.Vector3(2, 3, -3));
+                            createAnimation(new THREE.Vector3(2, 3, -3), 2000);
                         break;
                     }
                     break;
@@ -320,29 +322,74 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         createAnimation(newPos, duration);
     }
 
-    function startCameraWorldAnimation() {
-        var newCameraPos = new THREE.Vector3(2184, 2725, 8401);
-        /*
-        self.timeLineCircuit.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut}));
-        self.timeLineCircuit.add(TweenLite.to(self.circuitPivot.rotation, 2, {x: radians(-30), y: 0, z: 0, delay: 0, ease: Power1.easeInOut}), 0);
-        self.timeLineCircuit.play();
-        */
-        console.log(self.world.children[0].children[0]);
-        
+    function startCameraWorldAnimation(stage, backward) {
+        switch(stage)
+        {
+            case 1:
+            playStage1Animation();
+            break;
+
+            case 2:
+            playStage2Animation(backward);
+            break;
+
+            case 3:
+            playStage3Animation(backward);
+            break;
+        }
+    }
+
+    function playStage1Animation() {
+        var newCameraPos = new THREE.Vector3(2, 1, 3);
+        //var stage1Animation = new TimelineMax({repeat: 0, paused:true});
+        self.stage1Animation.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut, onUpdate: function() {
+            self.orbit_controls.update()
+        }}));
+        self.stage1Animation.play();
+    }2
+
+    function playStage2Animation(backward) {
+        var newCameraPos = new THREE.Vector3(156, 320, 521);
+        //var stage2Animation = new TimelineMax({repeat: 0, paused:true});
+
+        // playStage3Animation(true);
+
+        self.stage2Animation.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut, onUpdate: function() {
+            self.orbit_controls.update()
+        }}));
+        if (backward) {
+            self.stage2Animation.reverse();
+        } else {
+            self.stage2Animation.play();
+        }
+
+    }
+
+    function playStage3Animation(backward) {
+        //var newCameraPos = new THREE.Vector3(2184, 2725, 8401);
+        var newCameraPos = new THREE.Vector3(2650, 1476, 8081);
+        //var stage3Animation = new TimelineMax({repeat: 0, paused:true});
         //1. Make world visible by changing its opacity
-        self.timeLineCircuit.add(TweenLite.to(self.world.children[0].children[0].material, 1, {opacity: 1}));
+        self.stage3Animation.add(TweenLite.to(self.world.children[0].children[0].material, 1, {opacity: 1}));
         //2. Move world under the circuit
-        self.timeLineCircuit.add(TweenLite.to(self.world.position, 1, {x: 0, y: -6000, z: 0, delay: 0, ease: Power1.easeInOut}), 0);
+        self.stage3Animation.add(TweenLite.to(self.world.position, 1, {x: 0, y: -6000, z: 0, delay: 0, ease: Power1.easeInOut}), 0);
         //3. Rotate circuit behind the world
-        self.timeLineCircuit.add(TweenLite.to(self.circuitPivot.rotation, 1, {x: radians(-30), y: 0, z: 0, delay: 1, ease: Power1.easeInOut}), 0);
+        self.stage3Animation.add(TweenLite.to(self.circuitPivot.rotation, 1, {x: radians(-30), y: 0, z: 0, delay: 1, ease: Power1.easeInOut}), 0);
         //4. Rotate world
-        self.timeLineCircuit.add(TweenLite.to(self.world.rotation, 2, {x: radians(-180), y: 0, z: radians(93.3), delay: 1}), 0);
+        self.stage3Animation.add(TweenLite.to(self.world.rotation, 2, {x: radians(-180), y: 0, z: radians(93.3), delay: 1}), 0);
         //5. Move World
-        self.timeLineCircuit.add(TweenLite.to(self.world.position, 2, {x: -4000, y: -3000, z: 0, delay: 1, ease: Power1.easeInOut}), 0);
+        self.stage3Animation.add(TweenLite.to(self.world.position, 2, {x: -4000, y: -2000, z: 0, delay: 1, ease: Power1.easeInOut}), 0);
 
+        self.stage3Animation.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut, onUpdate: function() {
+            self.orbit_controls.update()
+        }}), 0);
 
-        self.timeLineCircuit.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut}), 0);
-        self.timeLineCircuit.play();
+        if (backward) {
+            self.stage3Animation.reverse();
+        }
+        else {
+            self.stage3Animation.play(0, 3);
+        }
     }
 
     //###########################################################################################################

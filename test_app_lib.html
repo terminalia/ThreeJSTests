@@ -44,16 +44,30 @@
 			FEScene.getCameraPosition();
 
 			if (event.key === '1') {
-				FEScene.startCameraAnimation(new Array(2, 1, 3), 2000);
+				//FEScene.startCameraAnimation(new Array(2, 1, 3), 2000);
+				FEScene.startCameraWorldAnimation(1, false);
 			}
 
 			if (event.key === '2') {
-				FEScene.startCameraAnimation(new Array(176, 473, 537), 2000);
+				//FEScene.startCameraAnimation(new Array(176, 473, 537), 2000);
+				FEScene.startCameraWorldAnimation(2, false);
 			}
 
 			if (event.key === '3') {
 				//FEScene.startCameraAnimation(new Array(2535, 1866, 11328), 2000);
-				FEScene.startCameraWorldAnimation();
+				FEScene.startCameraWorldAnimation(3, false);
+			}
+
+			if (event.key === '4') {
+				//FEScene.startCameraAnimation(new Array(2535, 1866, 11328), 2000);
+				FEScene.startCameraWorldAnimation(3, true);
+			}
+
+			if (event.key === '5') {
+				FEScene.startCameraWorldAnimation(3, true);
+				setTimeout(function(){
+					FEScene.startCameraWorldAnimation(2, true);
+				},1000)
 			}
 
 			if (event.key === 'a') {
