@@ -21,12 +21,10 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     self.worldAnimation = null;
     self.world = null;
     self.circuitPivot = null;
-    self.stage1Animation = new TimelineMax({repeat: 0, paused:true});
-    self.stage2Animation = new TimelineMax({repeat: 0, paused:true});
-    self.stage3Animation = new TimelineMax({repeat: 0, paused:true});
     self.stageAnimation = new TimelineMax({repeat: 0, paused: true});
     self.worldSize = 6000;
     self.currentState = 'StageStart';
+    self.animationCreated = false;
 
     init(container)
     
@@ -323,6 +321,10 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     }
 
     function startCameraWorldAnimation(stage) {
+        if (self.animationCreated === false) {
+            createStageAnimation();
+            self.animationCreated = true;
+        }
         switch(stage)
         {
             case 1:
