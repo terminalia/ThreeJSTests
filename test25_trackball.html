@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>ThreeJS VideoTexture Test 1</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			margin: 0px;
+			background-color: #000000;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+
+	<script src="bower_components/three.js/build/three.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+	<script src="bower_components/three.js/examples/js/controls/TrackballControls.js"></script>
+
+	<script>
+
+		var camera, camera_control, scene, renderer, stats;
+		var textureLoader;
+        var cube, world;
+
+        var leftPressed;
+        var mouse_vector1, mouse_vector2;
+        var axis_vector = new THREE.Vector3();
+        var currentRot = new THREE.Matrix4();
+        var lastRot = new THREE.Matrix4();
+
+		init();
+		animate();
+
+		function init() {
+			//###################################################
+			// INITIAL SETUP
+			//###################################################
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			//renderer.setClearColor(new THREE.Color('rgb(98, 166, 189)', 1))
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+
+			textureLoader = new THREE.TextureLoader();
+
+			//###################################################
+			// SCENE SETUP
+			//###################################################
+			scene = new THREE.Scene();
+
+			//Setup the camera
+			camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.z = 5;
+			
+			var ambientLight = new THREE.AmbientLight(0xfaebd7);
+            scene.add(ambientLight);
+	
+			//###################################################
+			// ASSETS LOADING
+			//###################################################
+			var cubeGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
+			var cubeMaterial = new THREE.MeshPhongMaterial();
+			var cubeTexture = new textureLoader.load("assets/textures/crate.png");
+			cubeMaterial.map = cubeTexture;
+
+			cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+			cube.position.set(2, 0, 0);
+						
+			//scene.add(cube);
+			var worldMap = textureLoader.load("assets/textures/world_white.png");
+            var worldBumMap = textureLoader.load("assets/textures/world_bump.jpg");
+			var worldMaterial = new THREE.MeshStandardMaterial({map: worldMap, color: 0xffffff, bumpMap: worldBumMap});
+			worldMaterial.transparent = true;
+			worldMaterial.opacity = 1;
+			world = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 32, 32), worldMaterial);
+			world.position.set(2, 0, 0);
+			scene.add(world);
+
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			stats = new Stats();
+			document.body.appendChild( stats.domElement );
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.left	= '0px';
+			stats.domElement.style.bottom	= '0px';
+			stats.update();
+
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+			window.addEventListener( 'resize', onWindowResize, false );
+            window.addEventListener('mousedown', function(event) {
+				if (event.button === 0) {
+					onMouseDown(event.clientX, event.clientY)
+				}
+			}, false);
+            window.addEventListener('mouseup', onMouseUp, false);
+            window.addEventListener('mousemove', function(event) {
+				onMouseMove(event.clientX, event.clientY);
+			}, false);
+			window.addEventListener('touchstart', function(event) {
+				onMouseDown(event.touches[0].clientX, event.touches[0].clientY);	
+			}, false);
+			window.addEventListener('touchend', onMouseUp, false);
+			window.addEventListener('touchmove', function(event) {
+				onMouseMove(event.touches[0].clientX, event.touches[0].clientY);	
+			}, false);
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+		}
+
+        function onMouseDown(x, y) {
+                leftPressed = true;
+                //Store last rotation
+                lastRot.copy(currentRot);
+                //Compute the pinch matrix 
+                mouse_vector1 = compute_vector(x, y);
+        }
+
+        function onMouseUp(event) {
+            leftPressed = false;
+        }
+
+        function onMouseMove(x, y) {
+            if (leftPressed) {
+                //Compute the second vector when the user drag the mouse
+                mouse_vector2 = compute_vector(x, y);
+                //Find the perpendicular vector between mouse_vector1 and mouse_vector2 (the rotation axis)
+                axis_vector.crossVectors(mouse_vector1, mouse_vector2);
+
+                if (axis_vector.length() > Number.EPSILON) {
+                    //Compute the angle between mouse_vector1 and mouse_vector2
+                    var angleRad = Math.acos(mouse_vector1.dot(mouse_vector2));
+                    angleRad *= 2;
+                    //Set a matrix 4x4 as an arbitrary axis rotation
+                    currentRot.makeRotationAxis(axis_vector.normalize(), angleRad);
+                }
+                else {
+                    currentRot.identity();
+                }
+
+                currentRot.multiply(lastRot);
+                //cube.matrix.multiply(currentRot);
+                world.rotation.setFromRotationMatrix(currentRot);
+            }
+
+            
+        }
+
+		function animate() {
+            
+			renderer.render( scene, camera );
+			requestAnimationFrame( animate );
+			stats.update();
+		}
+
+        function compute_vector(x, y) {
+            var screen_to_camera_x = 1.0 * x / window.innerWidth * 2 - 1.0;
+	        var screen_to_camera_y = 1.0 * y / window.innerHeight * 2 - 1.0;
+
+            var P = new THREE.Vector3(screen_to_camera_x, screen_to_camera_y, 0.0);
+            P.y = -P.y;
+
+            var squaredLength = P.lengthSq();
+
+            if (squaredLength <= 1) {
+                P.z = Math.sqrt(1 - squaredLength);
+            }
+            else {
+                P.normalize();
+            }
+
+            return P;
+        }
+</script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>ThreeJS VideoTexture Test 1</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			margin: 0px;
+			background-color: #000000;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+
+	<script src="bower_components/three.js/build/three.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+	<script src="bower_components/three.js/examples/js/controls/TrackballControls.js"></script>
+	
+	<script>
+
+		var camera, camera_control, scene, renderer, stats
+		var textureLoader;
+        var last_x = 0; 
+        var last_y = 0;
+        var rot_x = 0; 
+        var rot_y = 0;
+        var leftPressed;
+        var world;
+
+		init();
+		animate();
+
+		function init() {
+			//###################################################
+			// INITIAL SETUP
+			//###################################################
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			//renderer.setClearColor(new THREE.Color('rgb(98, 166, 189)', 1))
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+
+			textureLoader = new THREE.TextureLoader();
+
+			//###################################################
+			// SCENE SETUP
+			//###################################################
+			scene = new THREE.Scene();
+
+			//Setup the camera
+			camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.z = 5;
+			
+			var ambientLight = new THREE.AmbientLight(0xfaebd7);
+            scene.add(ambientLight);
+	
+			//###################################################
+			// ASSETS LOADING
+			//###################################################
+			var worldMap = textureLoader.load("assets/textures/world_white.png");
+            var worldBumMap = textureLoader.load("assets/textures/world_bump.jpg");
+			var worldMaterial = new THREE.MeshStandardMaterial({map: worldMap, color: 0xffffff, bumpMap: worldBumMap});
+			worldMaterial.transparent = true;
+			worldMaterial.opacity = 1;
+			world = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 32, 32), worldMaterial);
+			world.position.set(2, 0, 0);
+			scene.add(world);
+
+
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			stats = new Stats();
+			document.body.appendChild( stats.domElement );
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.left	= '0px';
+			stats.domElement.style.bottom	= '0px';
+			stats.update();
+
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+			window.addEventListener( 'resize', onWindowResize, false );
+            window.addEventListener('mousedown', function(event) {
+                if (event.button === 0) {
+                    onMouseDown();
+                }
+            }, false);
+            window.addEventListener('mouseup', onMouseUp, false);
+            window.addEventListener('mousemove', function(event) {
+				onMouseMove(event.clientX, event.clientY);
+			}, false);
+			window.addEventListener('touchstart', function(event) {
+				onMouseDown(event.touches[0].clientX, event.touches[0].clientY);	
+			}, false);
+			window.addEventListener('touchend', onMouseUp, false);
+			window.addEventListener('touchmove', function(event) {
+				onMouseMove(event.touches[0].clientX, event.touches[0].clientY);	
+			}, false);
+		}
+
+        function onMouseDown() {
+            leftPressed = true;
+        }
+
+        function onMouseUp(event) {
+            leftPressed = false;
+        }
+
+        function onMouseMove(x, y) {
+
+            var diff_x = x - last_x;
+            var diff_y = y - last_y;
+            last_x = x;
+            last_y = y;
+
+            if (leftPressed) {
+                rot_x += 0.005 * diff_x;
+                rot_y += 0.005 * diff_y;
+
+                world.rotation.set(rot_y, rot_x, 0);
+            }
+        }
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function animate() {
+
+			renderer.render( scene, camera );
+			requestAnimationFrame( animate );
+			stats.update();
+		}
+
+        function radians(degrees) {
+            return degrees * Math.PI / 180;
+        }
+
+</script>
+</body>
+</html>
