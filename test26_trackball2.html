@@ -85,7 +85,7 @@
 			window.addEventListener( 'resize', onWindowResize, false );
             window.addEventListener('mousedown', function(event) {
                 if (event.button === 0) {
-                    onMouseDown();
+                    onMouseDown(event.touches[0].clientX, event.touches[0].clientY);
                 }
             }, false);
             window.addEventListener('mouseup', onMouseUp, false);
@@ -101,8 +101,10 @@
 			}, false);
 		}
 
-        function onMouseDown() {
+        function onMouseDown(x, y) {
             leftPressed = true;
+			last_x = x;
+			last_y = y;
         }
 
         function onMouseUp(event) {
@@ -117,10 +119,10 @@
             last_y = y;
 
             if (leftPressed) {
-                rot_x += 0.005 * diff_x;
-                rot_y += 0.005 * diff_y;
-
-                world.rotation.set(rot_y, rot_x, 0);
+				
+				rot_x += diff_x;
+				rot_y += diff_y;
+				world.rotation.set(radians(rot_y), radians(rot_x), 0);
             }
         }
 
@@ -142,6 +144,10 @@
         function radians(degrees) {
             return degrees * Math.PI / 180;
         }
+
+		function radToDeg(radians) {
+			return radians * 180 / Math.PI;
+		}
 
 </script>
 </body>
