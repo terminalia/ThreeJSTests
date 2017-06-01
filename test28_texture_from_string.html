@@ -45,7 +45,7 @@
 			scene = new THREE.Scene();
 
 			//Setup the camera
-			camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10000 );
 			camera.position.z = 5;
 
 			//Add controls to the camera
@@ -67,7 +67,7 @@
 						
 			scene.add(cube);
 
-            mesh = createLabel("Hello World", 0, 0, 1, 32, "red");
+            mesh = createLabel("Hello World Hello World Hello World Hello World Hello World", 0, 0, 1, 32, "cyan");
             scene.add(mesh);
 
 			//###################################################
@@ -105,12 +105,15 @@
         function createLabel(text, x, y, z, size, color) {
             var canvas = document.createElement("canvas");
             var context = canvas.getContext("2d");
+			canvas.width = 900;
             context.font = size + "pt Arial";
             context.textAlign = "center";
             context.fillRect(0, 0, 5, 5);
-            context.fillStyle = "blue";
+            context.fillStyle = color;
             context.fillText(text, canvas.width / 2, canvas.height / 2);
             var texture = new THREE.Texture(canvas);
+			texture.magFilter = THREE.LinearFilter;
+			texture.minFilter = THREE.LinearMipMapLinearFilter;
             texture.needsUpdate = true;
             var material = new THREE.MeshBasicMaterial({
                 map : texture,

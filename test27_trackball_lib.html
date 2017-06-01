@@ -45,6 +45,7 @@
 
 			textureLoader = new THREE.TextureLoader();
             trackBall = new TERMINALIA.Trackball();
+			trackBall.enabled = true;
 
 			//###################################################
 			// SCENE SETUP
@@ -90,44 +91,26 @@
 			window.addEventListener( 'resize', onWindowResize, false );
             window.addEventListener('mousedown', function(event) {
                 if (event.button === 0) {
-                    onMouseDown();
+					trackBall.onMouseDown(event.clientX, event.clientY);
                 }
             }, false);
-            window.addEventListener('mouseup', onMouseUp, false);
+            window.addEventListener('mouseup', function(event) {
+				trackBall.onMouseUp();
+			}, false);
             window.addEventListener('mousemove', function(event) {
-                trackBall.rotateObject(leftPressed, event.clientX, event.clientY);
+                //trackBall.rotateObject(leftPressed, event.clientX, event.clientY);
+				trackBall.onMouseMove(event.clientX, event.clientY);
 			}, false);
 			window.addEventListener('touchstart', function(event) {
-				onMouseDown();	
+				//onMouseDown();	
 			}, false);
-			window.addEventListener('touchend', onMouseUp, false);
+			window.addEventListener('touchend', function(event) {
+				//trackBall.onMouseUp();	
+			}, false);
 			window.addEventListener('touchmove', function(event) {
-				trackBall.rotateObject(leftPressed, event.touches[0].clientX, event.touches[0].clientY);	
+				//trackBall.rotateObject(leftPressed, event.touches[0].clientX, event.touches[0].clientY);	
 			}, false);
 		}
-
-        function onMouseDown() {
-            leftPressed = true;
-        }
-
-        function onMouseUp(event) {
-            leftPressed = false;
-        }
-
-        function onMouseMove(x, y) {
-
-            var diff_x = x - last_x;
-            var diff_y = y - last_y;
-            last_x = x;
-            last_y = y;
-
-            if (leftPressed) {
-                rot_x += 0.005 * diff_x;
-                rot_y += 0.005 * diff_y;
-
-                world.rotation.set(rot_y, rot_x, 0);
-            }
-        }
 
 		function onWindowResize() {
 

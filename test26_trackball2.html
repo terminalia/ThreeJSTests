@@ -65,7 +65,8 @@
 			worldMaterial.transparent = true;
 			worldMaterial.opacity = 1;
 			world = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 32, 32), worldMaterial);
-			world.position.set(2, 0, 0);
+			world.position.set(1, 0, 0);
+			world.rotation.set(radians(20), 0, 0);
 			scene.add(world);
 
 
@@ -122,7 +123,9 @@
 				
 				rot_x += diff_x;
 				rot_y += diff_y;
-				world.rotation.set(radians(rot_y), radians(rot_x), 0);
+
+				var offset = 30;
+				world.rotation.set(radians(offset), radians(rot_x), 0);
             }
         }
 
