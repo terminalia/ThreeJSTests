@@ -5,7 +5,6 @@ TERMINALIA.TerminUtils = function TerminUtils() {
     var self = this;
     this.objLoader = new THREE.OBJLoader();
     this.cubeTextureLoader = new THREE.CubeTextureLoader();
-    this.hdrCubeTextureLoader = new THREE.HDRCubeTextureLoader();
     this.textureLoader = new THREE.TextureLoader();
     this.rayCaster = new THREE.Raycaster();
     this.rayCaster.ray.direction.set(0, -1, 0);

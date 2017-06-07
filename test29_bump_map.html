@@ -16,13 +16,13 @@
 
 	<script src="bower_components/three.js/build/three.js"></script>
 	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+    <script src="bower_components/three.js/examples/js/loaders/OBJLoader.js"></script>
 	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
-
+    <script src="libs/TerminUtils.js"></script>
 	<script>
 
 		var camera, camera_control, scene, renderer, stats
-		var textureLoader
-        var mesh
+		var textureLoader, TerminUtils;
 
 		init();
 		animate();
@@ -38,7 +38,7 @@
 			document.body.appendChild( renderer.domElement );
 
 			textureLoader = new THREE.TextureLoader();
-
+            TerminUtils =  new TERMINALIA.TerminUtils();
 			//###################################################
 			// SCENE SETUP
 			//###################################################
@@ -53,41 +53,28 @@
 			
 			var ambientLight = new THREE.AmbientLight(0xfaebd7);
             scene.add(ambientLight);
+
+            var dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            dirLight.position.set(0, 2, -5);
+            scene.add(dirLight);
+            var helper = new THREE.DirectionalLightHelper( dirLight);
+            scene.add(helper);
 	
 			//###################################################
 			// ASSETS LOADING
 			//###################################################
-			var cubeGeometry = new THREE.CubeGeometry(1, 1, 1);
-			var cubeMaterial = new THREE.MeshPhongMaterial();
-			var cubeTexture = new textureLoader.load("assets/textures/crate.png");
-			cubeMaterial.map = cubeTexture;
+            var wheelsBumpMap = TerminUtils.createTexture("assets/textures/FrontWheelsBump.png");
+            var wheelsColorMap = TerminUtils.createTexture('assets/textures/FrontWheels.jpg');
+            var insideWheelsMat = new THREE.MeshPhongMaterial({
+                map: wheelsColorMap,
+                bumpMap: wheelsBumpMap,
+                bumpScale: 1
+            });
 
-			var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-			cube.position.set(0, -1, -1);
-						
-			scene.add(cube);
+            var insideWheels = TerminUtils.loadObjModel("InsideWheels", 'assets/models/obj/InsideWheels.obj', insideWheelsMat);
+            scene.add(insideWheels);
 
-			/*
-            var mesh1 = createLabel("Hello World Hello World Hello World Hello World", 0, 0, 1, 32, "cyan");
-            var mesh2 = createLabel("Hello World spaceballs", 0, 1, 1, 32, "cyan");
-            scene.add(mesh1);
-            scene.add(mesh2);
-			*/
-			var texture = createLabel("Max Power", 0, 0, 1, 64, "cyan");
-			var textMat = new THREE.SpriteMaterial( { map: texture, color: 0xffffff } );
-	        var sprite = new THREE.Sprite( textMat );
-			//scene.add(sprite);
-
-			var texture2 = createLabel("Paddocks 200kWh", 0, 0.5, 1, 32, "cyan");
-			var textMat2 = new THREE.SpriteMaterial( { map: texture2, color: 0xffffff } );
-	        var sprite2= new THREE.Sprite( textMat2 );
-			sprite2.position.set(2, 0, 0)
-
-			var spriteGroup = new THREE.Group();
-			// spriteGroup.add(sprite);
-			// spriteGroup.add(sprite2);
-			scene.add(sprite2);
-
+            
 			//###################################################
 			// GUI SETUP
 			//###################################################
@@ -120,37 +107,17 @@
 			stats.update();
 		}
 
-        function createLabel(text, x, y, z, size, color) {
-            var canvas = document.createElement("canvas");
-            var context = canvas.getContext("2d");
-			context.font = size + "px Arial";			
-			var textWidth = context.measureText( text );
-			canvas.width = THREE.Math.nextPowerOfTwo(Math.ceil(textWidth.width));
-			canvas.height = THREE.Math.nextPowerOfTwo(Math.ceil(textWidth.width));
-			console.log(canvas)
-            context = canvas.getContext("2d");
-            context.font = size + "px Arial";
-			context.shadowColor = 'pink';
-			context.shadowBlur = 16;
-			
-            context.fillStyle = color;
-            context.fillText(text, 16, size);
-            var texture = new THREE.Texture(canvas);
-			texture.magFilter = THREE.LinearFilter;
-			texture.minFilter = THREE.LinearMipMapLinearFilter;
-            texture.needsUpdate = true;
-            var material = new THREE.MeshBasicMaterial({
-                map : texture,
-                side: THREE.DoubleSide
-            });
+		function addCube() {
+			var cubeGeometry = new THREE.CubeGeometry(1, 1, 1);
+			var cubeMaterial = new THREE.MeshPhongMaterial();
+			var cubeTexture = new textureLoader.load("assets/textures/crate.png");
+			cubeMaterial.map = cubeTexture;
 
-            material.transparent = true;
-            var mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width, canvas.height, 10, 10), material);
-            mesh.position.set(x, y, z);
-			
-
-            return texture;
-        }
+			var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+			cube.position.set(0, 0, 0);
+						
+			scene.add(cube);
+		}
 
 </script>
 </body>

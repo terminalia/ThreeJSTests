@@ -4,6 +4,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
 
     var self = this;
     self.TerminUtils = null;
+    self.spaceBall = new TERMINALIA.Trackball();
     self.renderer = null;
     self.camera = null;
     self.cameraOrtho = null;
@@ -16,7 +17,6 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     self.pinsGroup = null;
     self.glarePlaneSize = 312;
     self.customShaders = CustomShaders;
-    self.dirLight = null;
     self.cameraAnimation = null;
     self.worldAnimation = null;
     self.world = null;
@@ -34,10 +34,33 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         self.renderer = new THREE.WebGLRenderer({ antialias: true });
         self.renderer.setClearColor(new THREE.Color(0x0555fa))
         self.renderer.setPixelRatio(window.devicePixelRatio);
-        self.renderer.autoClear = false;
+        self.renderer.autoClear = true;
         self.renderer.setSize(self.container.offsetWidth, self.container.offsetHeight);
         self.container.appendChild(self.renderer.domElement);
         self.TerminUtils =  new TERMINALIA.TerminUtils();
+        
+        self.spaceBall.enabled = false;
+
+        self.container.addEventListener('mousedown', function(event) {
+            if (event.button === 0) {
+                self.spaceBall.onMouseDown(event.clientX, event.clientY);
+            }
+        }, false);
+        self.container.addEventListener('mouseup', function(event) {
+            self.spaceBall.onMouseUp();
+        }, false);
+        self.container.addEventListener('mousemove', function(event) {
+            self.spaceBall.onMouseMove(event.clientX, event.clientY);
+        }, false);
+        self.container.addEventListener('touchstart', function(event) {
+            self.spaceBall.onMouseDown(event.touches[0].clientX, event.touches[0].clientY);
+        }, false);
+        self.container.addEventListener('touchend', function(event) {
+            self.spaceBall.onMouseUp();
+        }, false);
+        self.container.addEventListener('touchmove', function(event) {
+            self.spaceBall.onMouseMove(event.touches[0].clientX, event.touches[0].clientY);
+        }, false);
         
         initScene();
     }
@@ -48,12 +71,12 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         self.sceneOrtho = new THREE.Scene();
         self.pinsGroup = new THREE.Group();
         initOrbitCamera();
-        initOrthoCamera();
+        //initOrthoCamera();
         addLights();
-        addCubeMap('/assets/textures/cubemaps/parliament/', '.jpg');
+        addCubeMap('../libs/terminalia/assets/textures/cubemaps/parliament2/', '.jpg');
         addAssets();
         addPins();
-        addOrthoAssets();
+        ///addOrthoAssets();
         addInfoFlags();
         addHUD();
         
@@ -84,11 +107,16 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
 
     //Render routine
     function render() {
-        TWEEN.update();
+        /*
         self.renderer.clear();
         self.renderer.render(self.scene, self.camera);
         self.renderer.clearDepth();
         self.renderer.render(self.sceneOrtho, self.cameraOrtho);
+        */
+
+        switchCameraControls();
+
+        self.renderer.render(self.scene, self.camera);
         requestAnimationFrame(render);
         self.stats.update();
     }
@@ -101,14 +129,26 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     function resize() {
         self.camera.aspect = self.container.offsetWidth/self.container.offsetHeight;
         self.camera.updateProjectionMatrix();
+        /*
         self.cameraOrtho.left = - self.container.offsetWidth / 2;
         self.cameraOrtho.right = self.container.offsetWidth / 2;
         self.cameraOrtho.top = self.container.offsetHeight / 2;
         self.cameraOrtho.bottom = - self.container.offsetHeight / 2;
         self.cameraOrtho.updateProjectionMatrix();
-
         updateOrthoAssetsSize();
+        */
         self.renderer.setSize(self.container.offsetWidth, self.container.offsetHeight);
+    }
+
+    function switchCameraControls() {
+        if (self.currentState === 'StageFinal') {
+            self.orbit_controls.enabled = false;
+            self.spaceBall.enabled = true;
+        }
+        else {
+            self.orbit_controls.enabled = true;
+            self.spaceBall.enabled = false;
+        }
     }
 
     //Find object using raycaster when user click/tap on an object
@@ -124,15 +164,15 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
                 if (intersected[0].object.name === self.pinsGroup.children[i].name) {
                     switch (i) {
                         case 0:
-                            createAnimation(new THREE.Vector3(2, 1, 4), 2000);
+                            startCameraAnimation([2, 1, 3], 2);
                         break;
 
                         case 1:
-                            createAnimation(new THREE.Vector3(3, 3, 0.8), 2000);
+                            startCameraAnimation([3, 3, 0.8], 2);
                         break;
 
                         case 2:
-                            createAnimation(new THREE.Vector3(2, 3, -3), 2000);
+                            startCameraAnimation([2, 3, -3], 2);
                         break;
                     }
                     break;
@@ -162,9 +202,95 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     //###########################################################################################################
     
     function addAssets() {
-        addCar();
-        addCircuit(5999, 0);
+        //addCar();
+        addFECar();
+        addCircuit(self.worldSize - 1, 0);
         addWorld(self.worldSize);
+    }
+
+    function addFECar() {
+        //Car Group
+        var carGroup = new THREE.Group();
+
+        //Body
+        var bodyMat = self.TerminUtils.createTextureReflectiveMaterial('../libs/terminalia/assets/textures/fe_car/Body_2048.jpg', self.reflectionMap, .5);
+        var body = self.TerminUtils.loadObjModel("Body", '../libs/terminalia/assets/models/obj/fe_car/Body2.obj', bodyMat);
+        carGroup.add(body);
+
+        //Body Bottom
+        var bodyBottomMat = new THREE.MeshLambertMaterial( { color: 0x2c2c2d, envMap: self.reflectionMap, combine: THREE.MixOperation, reflectivity: .3} );
+        bodyBottomMat.side = THREE.DoubleSide;
+        var bodyBottom = self.TerminUtils.loadObjModel("BodyBottom", '../libs/terminalia/assets/models/obj/fe_car/BodyBottom.obj', bodyBottomMat);
+        carGroup.add(bodyBottom);
+
+        //Front Wheels
+        var frontWheelsMat = self.TerminUtils.createTextureMaterial('../libs/terminalia/assets/textures/fe_car/FrontWheels.jpg');
+        var frontWheels = self.TerminUtils.loadObjModel("FrontWheels", '../libs/terminalia/assets/models/obj/fe_car/FrontWheels.obj', frontWheelsMat);
+        carGroup.add(frontWheels);
+
+        //Inside Wheels
+        var insideWheelsMat = self.TerminUtils.createTextureMaterial('../libs/terminalia/assets/textures/fe_car/FrontWheels.jpg');
+        var insideWheels = self.TerminUtils.loadObjModel("FrontWheels", '../libs/terminalia/assets/models/obj/fe_car/InsideWheels.obj', insideWheelsMat);
+        carGroup.add(insideWheels);
+
+        //Tires
+        var tiresMat = new THREE.MeshLambertMaterial( { color: 0xe3f4f4, envMap: self.reflectionMap, combine: THREE.MixOperation, reflectivity: .7} );
+        var frontTires = self.TerminUtils.loadObjModel("Tires", '../libs/terminalia/assets/models/obj/fe_car/Tires.obj', tiresMat);
+        carGroup.add(frontTires);
+
+        //BackTires
+        var backTiresMat = new THREE.MeshLambertMaterial( { color: 0x000000, side: THREE.DoubleSide} );
+        var backTires = self.TerminUtils.loadObjModel("Tires", '../libs/terminalia/assets/models/obj/fe_car/BackTires.obj', backTiresMat);
+        carGroup.add(backTires);
+
+        //Brakes
+        var brakesMat = self.TerminUtils.createTextureReflectiveMaterial('../libs/terminalia/assets/textures/fe_car/Brake.jpg', self.reflectionMap, .3);
+        brakesMat.side = THREE.DoubleSide;
+        var brakes = self.TerminUtils.loadObjModel("Brake", '../libs/terminalia/assets/models/obj/fe_car/Brakes.obj', brakesMat);
+        carGroup.add(brakes);
+
+        //Cockpit
+        var cockpitMat = new THREE.MeshLambertMaterial({color: 0x070707});
+        cockpitMat.side = THREE.DoubleSide;
+        var cockpit = self.TerminUtils.loadObjModel("Cockpit", '../libs/terminalia/assets/models/obj/fe_car/Cockpit.obj', cockpitMat);
+        carGroup.add(cockpit);
+
+        //Cockpit Head
+        var cockPitHeadMat = new THREE.MeshLambertMaterial({color: 0x404142});
+        var cockPitHead = self.TerminUtils.loadObjModel("Cockpit Secure", '../libs/terminalia/assets/models/obj/fe_car/CockpitHead.obj', cockPitHeadMat);
+        carGroup.add(cockPitHead);
+
+        //Cockpit Seat
+        var cockpitSeatMat = new THREE.MeshLambertMaterial({color: 0x5d5f60});
+        var cockpitSeat = self.TerminUtils.loadObjModel("Cockpit Seat", '../libs/terminalia/assets/models/obj/fe_car/CockpitSeat.obj', cockpitSeatMat);
+        carGroup.add(cockpitSeat);
+
+        //Cockpit Belts
+        var cockpitBeltsMat = new THREE.MeshLambertMaterial({color: 0xc61b35});
+        var cockpitBelts = self.TerminUtils.loadObjModel("Cockpit Belts", '../libs/terminalia/assets/models/obj/fe_car/CockpitBelts.obj', cockpitBeltsMat);
+        carGroup.add(cockpitBelts);
+
+        //Cockpit Buckles
+        var cockpitBucklesMat = new THREE.MeshLambertMaterial( { color: 0xe3f4f4, envMap: self.reflectionMap, combine: THREE.MixOperation, reflectivity: .7} );
+        var cockpitBuckles = self.TerminUtils.loadObjModel("Cockpit Belts Metal", '../libs/terminalia/assets/models/obj/fe_car/CockpitBuckles.obj', cockpitBucklesMat);
+        carGroup.add(cockpitBuckles);
+
+        //Engine
+        var engineMat = new THREE.MeshLambertMaterial({color: 0x070707});
+        var engine = self.TerminUtils.loadObjModel("Engine", '../libs/terminalia/assets/models/obj/fe_car/Engine.obj', engineMat);
+        carGroup.add(engine);
+
+        //Back Light
+        var backLightMat = self.TerminUtils.createTextureMaterial('../libs/terminalia/assets/textures/fe_car/BackLight.jpg');
+        var backLight = self.TerminUtils.loadObjModel("Back Light", '../libs/terminalia/assets/models/obj/fe_car/BackLight.obj', backLightMat);
+        carGroup.add(backLight);
+
+        //Suspensions
+        var suspensionsMat = self.TerminUtils.createTextureMaterial('../libs/terminalia/assets/textures/fe_car/Carbon_512.jpg');
+        var suspensions = self.TerminUtils.loadObjModel("Suspensions", '../libs/terminalia/assets/models/obj/fe_car/Suspensions.obj', suspensionsMat);
+        carGroup.add(suspensions);
+
+        self.scene.add(carGroup);
     }
 
     //Add assets to create the car
@@ -172,31 +298,31 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         //BODY
         var carGroup = new THREE.Group();
 
-        var carBodyMat = self.TerminUtils.createTextureReflectiveMaterial('assets/textures/car_body.png', self.reflectionMap, .5);
-        var carBody = self.TerminUtils.loadObjModel("CarBody", 'assets/models/obj/carbody.obj', carBodyMat);
+        var carBodyMat = self.TerminUtils.createTextureReflectiveMaterial('../libs/terminalia/assets/textures/car_body.png', self.reflectionMap, .5);
+        var carBody = self.TerminUtils.loadObjModel("CarBody", '../libs/terminalia/assets/models/obj/carbody.obj', carBodyMat);
         carGroup.add(carBody);
 
         //MECHANICAL
-        var carMechanicalMat = self.TerminUtils.createTextureReflectiveMaterial('assets/textures/car_mechanical.png', self.reflectionMap, .5);
-        var carMechanical = self.TerminUtils.loadObjModel("CarMechanical", 'assets/models/obj/carmechanical.obj', carMechanicalMat);
+        var carMechanicalMat = self.TerminUtils.createTextureReflectiveMaterial('../libs/terminalia/assets/textures/car_mechanical.png', self.reflectionMap, .5);
+        var carMechanical = self.TerminUtils.loadObjModel("CarMechanical", '../libs/terminalia/assets/models/obj/carmechanical.obj', carMechanicalMat);
         carGroup.add(carMechanical);
 
         //WHEELS
-        var carWheelsMat = self.TerminUtils.createTextureMaterial('assets/textures/car_wheels.jpg');
-        var carWheels = self.TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/carwheels.obj', carWheelsMat);
+        var carWheelsMat = self.TerminUtils.createTextureMaterial('../libs/terminalia/assets/textures/car_wheels.jpg');
+        var carWheels = self.TerminUtils.loadObjModel("CarWheels", '../libs/terminalia/assets/models/obj/carwheels.obj', carWheelsMat);
         carGroup.add(carWheels);
 
         //TYRES
         var carTyresMat = new THREE.MeshLambertMaterial( { color: 0xcbcfd6, envMap: self.reflectionMap, combine: THREE.MixOperation, reflectivity: 1.0} );
-        var carTyres = self.TerminUtils.loadObjModel("CarWheels", 'assets/models/obj/cartyres.obj', carTyresMat);
+        var carTyres = self.TerminUtils.loadObjModel("CarWheels", '../libs/terminalia/assets/models/obj/cartyres.obj', carTyresMat);
         carGroup.add(carTyres);
 
         //ADD SHADOW MAP
-        var shadowMap = self.TerminUtils.createTexture("assets/textures/car_shadow_bake.png");
+        var shadowMap = self.TerminUtils.createTexture("../libs/terminalia/assets/textures/car_shadow_bake.png");
         var shadowMapMaterial = new THREE.MeshBasicMaterial({map: shadowMap, color: 0xffffff});
         shadowMapMaterial.transparent = true;
         shadowMapMaterial.opacity = 0.7;
-        var plane = self.TerminUtils.loadObjModel("ShadowPlane", 'assets/models/obj/ShadowPlane.obj', shadowMapMaterial);
+        var plane = self.TerminUtils.loadObjModel("ShadowPlane", '../libs/terminalia/assets/models/obj/ShadowPlane.obj', shadowMapMaterial);
         carGroup.add(plane);
 
         self.scene.add(carGroup);
@@ -204,18 +330,17 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     
     //Add clickable pins
     function addPins() {
-        var pin1 = self.TerminUtils.createSprite('Pin1', 'assets/textures/circle_icon1.png');
+        var pin1 = self.TerminUtils.createSprite('Pin1', '../libs/terminalia/assets/textures/circle_icon1.png');
         pin1.scale.set(0.3, 0.3, 0.3);
         pin1.position.set(0.3, 0.7, 2.3);           
         self.pinsGroup.add(pin1);
-        console.log(self.pinsGroup.children[0].name)
 
-        var pin2 = self.TerminUtils.createSprite('Pin2', 'assets/textures/circle_icon2.png');
+        var pin2 = self.TerminUtils.createSprite('Pin2', '../libs/terminalia/assets/textures/circle_icon2.png');
         pin2.scale.set(0.3, 0.3, 0.3);
         pin2.position.set(0.8, 0.8, 0);
         self.pinsGroup.add(pin2);
 
-        var pin3 = self.TerminUtils.createSprite('Pin3', 'assets/textures/circle_icon3.png');
+        var pin3 = self.TerminUtils.createSprite('Pin3', '../libs/terminalia/assets/textures/circle_icon3.png');
         pin3.scale.set(0.3, 0.3, 0.3);
         pin3.position.set(0, 1.2, -2);
         self.pinsGroup.add(pin3);
@@ -226,12 +351,12 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     //Add info flags
     function addInfoFlags() {
         var flagSize = new THREE.Vector3(1.5, 1.5, 1.5);
-        var powerFlag = self.TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_power.png');
+        var powerFlag = self.TerminUtils.createSprite('Sprite4', '../libs/terminalia/assets/textures/bandiera_power.png');
         powerFlag.scale.set(flagSize.x, flagSize.y, flagSize.z);
         powerFlag.position.set(0, 1.2, 1);
         self.scene.add(powerFlag);
 
-        var speedFlag = self.TerminUtils.createSprite('Sprite4', 'assets/textures/bandiera_speed.png');
+        var speedFlag = self.TerminUtils.createSprite('Sprite4', '../libs/terminalia/assets/textures/bandiera_speed.png');
         speedFlag.scale.set(flagSize.x, flagSize.y, flagSize.z);
         speedFlag.position.set(0, 1.2, -2);
         self.scene.add(speedFlag);
@@ -253,7 +378,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         dirLight.position.set(0, 10, -25);
         self.scene.add(dirLight);
         var helper = new THREE.DirectionalLightHelper( dirLight);
-        self.scene.add(helper);
+        //self.scene.add(helper);
 
         var toonMaterial = new THREE.ShaderMaterial({
             uniforms: uniforms_,
@@ -273,10 +398,10 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         circuitPivotMat.opacity = 0;
         self.circuitPivot = new THREE.Mesh(new THREE.SphereBufferGeometry(size, 20, 20), circuitPivotMat);
         self.circuitPivot.material.visible = false;
-        console.log(self.circuitPivot);
 
-        var circuit = self.TerminUtils.loadObjModel('Circuit', 'assets/models/obj/circuit.obj', toonMaterial);
+        var circuit = self.TerminUtils.loadObjModel('Circuit', '../libs/terminalia/assets/models/obj/circuit_berlin.obj', toonMaterial);
         circuit.scale.set(40, 40, 40);
+        circuit.rotation.set(0, radians(180), 0);
         circuit.position.set(0, size * offset, 0);
 
         self.circuitPivot.add(circuit);
@@ -285,46 +410,34 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     }
 
     function addWorld(size) {
-        var worldTexture = self.TerminUtils.createTexture('assets/textures/world_white2.png');
+        var worldTexture = self.TerminUtils.createTexture('../libs/terminalia/assets/textures/world_white2.png');
         var worldMaterial = new THREE.MeshBasicMaterial({map: worldTexture});
         worldMaterial.transparent = true;
         worldMaterial.opacity = 0;
-        self.world = self.TerminUtils.loadObjModel('World', 'assets/models/obj/World.obj', worldMaterial);
+        self.world = self.TerminUtils.loadObjModel('World', '../libs/terminalia/assets/models/obj/World.obj', worldMaterial);
         self.world.scale.set(size, size, size);
-        self.world.position.set(0, -size -1000, 0);
+        self.world.position.set(0, -size, 0);
         self.scene.add(self.world);
+        self.spaceBall.addRotationToObject(self.world);
     }
 
     //###########################################################################################################
     // ANIMATIONS
     //###########################################################################################################
-
     //Create and start a new animation passing a new position
-    function createAnimation(new_position, duration) {
-        self.cameraAnimation = new TWEEN.Tween(self.camera.position)
-            .to({x: new_position.x, y: new_position.y, z: new_position.z}, duration)
-            .easing(TWEEN.Easing.Sinusoidal.InOut)
-            .onUpdate(function () {
-                self.camera.position.set(this.x, this.y, this.z);
-                self.orbit_controls.update();
-            })
-        .onComplete(function() {
-        });
-
-        self.cameraAnimation.start();
-    }
-
-    //Create and start a new animation taking an array as argument
     function startCameraAnimation(new_position, duration) {
-        var newPos = new THREE.Vector3(new_position[0], new_position[1], new_position[2]);
-        createAnimation(newPos, duration);
+        self.cameraAnimation = TweenMax.to(self.camera.position, duration, {x: new_position[0], y: new_position[1], z: new_position[2], onUpdate: function() {
+            self.orbit_controls.update();
+        }});
     }
 
-    function startCameraWorldAnimation(stage) {
+    function startStageAnimation(stage) {
+        //Before starting any animation we have to create the actual stageAnimation
         if (self.animationCreated === false) {
-            createStageAnimation();
+            createStageAnimations();
             self.animationCreated = true;
         }
+
         switch(stage)
         {
             case 1:
@@ -344,72 +457,20 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         }
     }
 
-    function playStageAnimation(stage, backward) {
-        if (backward) {
-            self.stageAnimation.reverse(stage);
-        } else {
-            self.stageAnimation.tweenFromTo("StageFinal", "Stage1");
-        }
-    }
-    function playStage1Animation() {
+    function createStageAnimations() {
+        //STAGE 1 is the ORIGIN (This animation never plays, it just gives an origin to the all animation)
         var newCameraPos = new THREE.Vector3(2, 1, 3);
-        //var stage1Animation = new TimelineMax({repeat: 0, paused:true});
-        self.stage1Animation.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut, onUpdate: function() {
+        self.stageAnimation.addLabel("StageOrigin");
+        self.stageAnimation.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut, onUpdate: function() {
             self.orbit_controls.update()
-        }}));
-        self.stage1Animation.play();
-    }2
+        }}), "StageOrigin");
 
-    function playStage2Animation(backward) {
-        var newCameraPos = new THREE.Vector3(156, 320, 521);
-        //var stage2Animation = new TimelineMax({repeat: 0, paused:true});
-
-        // playStage3Animation(true);
-
-        self.stage2Animation.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut, onUpdate: function() {
-            self.orbit_controls.update()
-        }}));
-        if (backward) {
-            self.stage2Animation.reverse();
-        } else {
-            self.stage2Animation.play();
-        }
-
-    }
-
-    function playStage3Animation(backward) {
-        //var newCameraPos = new THREE.Vector3(2184, 2725, 8401);
-        var newCameraPos = new THREE.Vector3(2650, 1476, 8081);
-        //var stage3Animation = new TimelineMax({repeat: 0, paused:true});
-        //1. Make world visible by changing its opacity
-        self.stage3Animation.add(TweenLite.to(self.world.children[0].children[0].material, 1, {opacity: 1}));
-        //2. Move world under the circuit
-        self.stage3Animation.add(TweenLite.to(self.world.position, 1, {x: 0, y: -6000, z: 0, delay: 0, ease: Power1.easeInOut}), 0);
-        //3. Rotate circuit behind the world
-        self.stage3Animation.add(TweenLite.to(self.circuitPivot.rotation, 1, {x: radians(-30), y: 0, z: 0, delay: 1, ease: Power1.easeInOut}), 0);
-        //4. Rotate world
-        self.stage3Animation.add(TweenLite.to(self.world.rotation, 2, {x: radians(-180), y: 0, z: radians(93.3), delay: 1}), 0);
-        //5. Move World
-        self.stage3Animation.add(TweenLite.to(self.world.position, 2, {x: -4000, y: -2000, z: 0, delay: 1, ease: Power1.easeInOut}), 0);
-
-        self.stage3Animation.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut, onUpdate: function() {
-            self.orbit_controls.update()
-        }}), 0);
-
-        if (backward) {
-            self.stage3Animation.reverse();
-        }
-        else {
-            self.stage3Animation.play(0, 3);
-        }
-    }
-
-    function createStageAnimation() {
-        //STAGE 1 is the ORIGIN
-        
         //STAGE 2
         newCameraPos = new THREE.Vector3(156, 320, 521);
         self.stageAnimation.addLabel("StageStart");
+        //1. rotate circuit 360
+        self.stageAnimation.add(TweenLite.to(self.circuitPivot.rotation, 2, {x: 0, y: radians(360), z: 0, delay: 0,  ease: Power4.easeInOut}), "StageStart");
+        //2. zoom out camera
         self.stageAnimation.add(TweenLite.to(self.camera.position, 2, {x: newCameraPos.x, y: newCameraPos.y, z: newCameraPos.z, delay: 0, ease: Power1.easeInOut, onUpdate: function() {
             self.orbit_controls.update()
         }}), "StageStart");
@@ -421,7 +482,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         //1. Make world visible by changing its opacity
         self.stageAnimation.add(TweenLite.to(self.world.children[0].children[0].material, 1, {opacity: 1}));
         //2. Move world under the circuit
-        self.stageAnimation.add(TweenLite.to(self.world.position, 1, {x: 0, y: -6000, z: 0, delay: 0, ease: Power1.easeInOut}), 'StageCircuit');
+        //self.stageAnimation.add(TweenLite.to(self.world.position, 1, {x: 0, y: -6000, z: 0, delay: 0, ease: Power1.easeInOut}), 'StageCircuit');
         //3. Rotate circuit behind the world
         self.stageAnimation.add(TweenLite.to(self.circuitPivot.rotation, 1, {x: radians(-30), y: 0, z: 0, delay: 1, ease: Power1.easeInOut}), 'StageCircuit');
         //4. Rotate world
@@ -446,7 +507,7 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
         var width = self.container.offsetWidth;
         var height = self.container.offsetHeight;
 
-        var gradientMap = self.TerminUtils.createTexture("assets/textures/test_gradient_ortho.png");
+        var gradientMap = self.TerminUtils.createTexture("../libs/terminalia/assets/textures/test_gradient_ortho.png");
         var gradientMaterial = new THREE.MeshBasicMaterial({map: gradientMap});
         gradientMaterial.transparent = true;
         gradientMaterial.opacity = 1;
@@ -499,8 +560,8 @@ TERMINALIA.FEScene = function FEScene(container, CustomShaders) {
     this.resize = resize;
     this.findObjectOnClick = findObjectOnClick;
     this.startCameraAnimation = startCameraAnimation;
-    this.startCameraWorldAnimation = startCameraWorldAnimation;
+    this.startStageAnimation = startStageAnimation;
     this.getCameraPosition = getCameraPosition;
-    this.createStageAnimation = createStageAnimation;
+    this.createStageAnimations = createStageAnimations;
     this.rotateWorld = rotateWorld;
 }
