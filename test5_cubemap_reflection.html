@@ -59,7 +59,7 @@
             spotLight.color = new THREE.Color("rgb(255, 255, 255)");
             spotLight.position.set(0, 30, 30);
             spotLight.intensity = 0.9;
-            scene.add(spotLight);
+            //scene.add(spotLight);
 
             var refractionCube = createCubeMapTexture('/assets/textures/cubemaps/parliament/', '.jpg');
             refractionCube.mapping = THREE.CubeRefractionMapping;
@@ -76,7 +76,7 @@
             sphere.position.x = 3;
 			scene.add(sphere);
 
-            objLoader.load('assets/models/obj/test_car.obj', function(loadedMesh) {
+            objLoader.load('assets/models/obj/Ferrero_Velociraptor.obj', function(loadedMesh) {
                    
                 var material = new THREE.MeshPhongMaterial();
                 material.color = new THREE.Color("rgb(255, 150, 252)");
