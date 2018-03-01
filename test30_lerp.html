@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>ThreeJS VideoTexture Test 1</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			margin: 0px;
+			background-color: #000000;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+    
+	<script src="bower_components/three.js/build/three.js"></script>
+	<script src="bower_components/three.js/examples/js/libs/stats.min.js"></script>
+	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+
+	<script>
+
+		var camera, camera_control, scene, renderer, stats
+		var textureLoader, cube;
+
+		init();
+		animate();
+
+		function init() {
+			//###################################################
+			// INITIAL SETUP
+			//###################################################
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			//renderer.setClearColor(new THREE.Color('rgb(98, 166, 189)', 1))
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+
+			textureLoader = new THREE.TextureLoader();
+
+			//###################################################
+			// SCENE SETUP
+			//###################################################
+			scene = new THREE.Scene();
+
+			//Setup the camera
+			camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.z = 25;
+
+			//Add controls to the camera
+			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
+			
+			var ambientLight = new THREE.AmbientLight(0xfaebd7);
+            scene.add(ambientLight);
+	
+			//###################################################
+			// ASSETS LOADING
+			//###################################################
+			var cubeGeometry = new THREE.CubeGeometry(1, 1, 1);
+			var cubeMaterial = new THREE.MeshPhongMaterial();
+			cubeMaterial.color = new THREE.Color(0xff3344);
+
+            cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+			cube.position.set(0, 0, 0);
+						
+			scene.add(cube);
+
+
+			//###################################################
+			// GUI SETUP
+			//###################################################
+			stats = new Stats();
+			document.body.appendChild( stats.domElement );
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.left	= '0px';
+			stats.domElement.style.bottom	= '0px';
+			stats.update();
+
+			//###################################################
+			// EVENTS SETUP
+			//###################################################
+            window.addEventListener( 'resize', onWindowResize, false );
+            window.addEventListener('keypress', onKeyPress, false);
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+        }
+        
+        function onKeyPress() {
+            if (event.key === 'a') {
+                console.log(cube);
+            }
+        }
+
+		function animate() {
+            //cube.position.x = lerp(cube.position.x, 10, 0.01);
+            translate(cube.position, new THREE.Vector3(10, 10, 0), 0.1, cube);
+            scale(new THREE.Vector3(6.2, 6.2, 6.2), 0.01, cube);
+			renderer.render( scene, camera );
+			camera_control.update();
+			requestAnimationFrame( animate );
+			stats.update();
+        }
+        
+        function lerp(v0, v1, t) {
+            //var result = v0 * (1-t) + v1 * t;
+            var result = v0 + t * (v1 - v0);
+
+            console.log(result - v1);
+            return result;
+        }
+
+        function translate(start_pos, end_pos, time, result) {
+            result.position.x = lerp(start_pos.x, end_pos.x, time);
+            result.position.y = lerp(start_pos.y, end_pos.y, time);
+            result.position.z = lerp(start_pos.z, end_pos.z, time);
+        }
+
+        function scale(new_scale, time, result) {
+            result.scale.x = lerp(result.scale.x, new_scale.x, time);
+            result.scale.y = lerp(result.scale.y, new_scale.y, time);
+            result.scale.z = lerp(result.scale.z, new_scale.z, time);
+        }
+
+</script>
+</body>
+</html>

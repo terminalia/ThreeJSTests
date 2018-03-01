@@ -92,8 +92,7 @@
 						//was: "float diffuse = max( dot( normal, lVector ), 0.0);",
 						// solution
 						"float diffuse = dot( normal, lVector );",
-						"if ( diffuse > 0.6 ) { diffuse = 1.0; }",
-						"else if ( diffuse > -0.2 ) { diffuse = uTone1; }",
+						"if ( diffuse > 0.6 ) { diffuse = uTone1; }",
 						"else { diffuse = uTone2; }",
 
 						"gl_FragColor = vec4( uKd * uMaterialColor * uDirLightColor * diffuse, 1.0 );",
@@ -154,7 +153,7 @@
 			toonMaterial.uniforms.uMaterialColor.value.copy(toonMaterialColor);
 			toonMaterial.side = THREE.DoubleSide;
 
-			var circuit = TerminUtils.loadObjModel('Circuit', 'assets/models/obj/Monkey.obj', toonMaterial);
+			var circuit = TerminUtils.loadObjModel('Circuit', 'assets/models/obj/Velociraptor.obj', toonMaterial);
 			scene.add(circuit);
 
 			//###################################################

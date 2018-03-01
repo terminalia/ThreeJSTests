@@ -51,7 +51,8 @@
 
 			//Setup the camera
 			camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10000 );
-			camera.position.z = 5;
+			camera.position.z = 15;
+			camera.position.y = 5;
 
 			//Add controls to the camera
 			camera_control = new THREE.OrbitControls(camera, renderer.domElement);
@@ -80,7 +81,7 @@
 			// ASSETS LOADING
 			//###################################################
 			objLoader.load('assets/models/obj/Ferrero_Velociraptor2.obj', function(loadedMesh) {
-				for (var i=0; i<1; i++) {
+				for (var i=0; i<4; i++) {
 					var newObj = new THREE.Group();
 					newObj.name = 'newObj' + i;
 					newObj.type = 'animal';
@@ -96,7 +97,7 @@
 							material.color = new THREE.Color("rgb(0, 0, 0)"); 
 						}
 						else {
-							material.color = new THREE.Color("rgb(255, 133, 255)");
+							material.color = new THREE.Color("rgb(255, 255, 255)");
 						}
 
 						//Share the same geometry among all meshes
